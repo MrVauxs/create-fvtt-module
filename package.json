@@ -1,0 +1,22 @@
+{
+	"name": "create-fvtt-module",
+	"version": "0.0.1",
+	"module": "index.ts",
+	"type": "module",
+	"private": true,
+	"bin": {
+		"create-myrepo": "./bin.js"
+	},
+	"files": [
+		"bin.js",
+		"templates/"
+	],
+	"devDependencies": {
+		"@types/bun": "latest",
+		"@clack/prompts": "^0.11.0",
+		"kolorist": "^1.8.0"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	}
+}

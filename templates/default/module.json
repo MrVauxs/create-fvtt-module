@@ -1,0 +1,42 @@
+{
+	"id": "module-template",
+	"title": "Module Template",
+	"description": "",
+	"authors": [
+		{
+			"name": "Vauxs",
+			"discord": "vauxs",
+			"twitter": "@ThatVauxs",
+			"email": "mrvauxs@gmail.com",
+			"ko-fi": "MrVauxs",
+			"patreon": "MrVauxs"
+		}
+	],
+	"version": "dev",
+	"compatibility": {
+		"minimum": "13",
+		"verified": "13"
+	},
+	"esmodules": [],
+	"styles": [],
+	"relationships": {},
+	"packs": [],
+	"packFolders": [],
+	"flags": {
+		"canUpload": true,
+		"dnd5e": {
+			"sourceBooks": {
+				"module-template": "Example Title"
+			},
+			"spellLists": []
+		},
+		"hotReload": {
+			"extensions": ["css", "json"],
+			"paths": ["styles"]
+		}
+	},
+	"url": "",
+	"bugs": "",
+	"manifest": "",
+	"download": ""
+}

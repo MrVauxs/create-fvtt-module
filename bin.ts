@@ -107,8 +107,16 @@ await p.tasks([
 					},
 				];
 			}
+			if (data.system.includes("dnd5e")) {
+				mod.flags.dnd5e = {
+					sourceBooks: {
+						[data.id]: data.title,
+					},
+					spellLists: [],
+				};
+			}
 
-			await Bun.write(modPath, JSON.stringify(mod, null, 2));
+			await Bun.write(modPath, JSON.stringify(mod, null, "\t"));
 		},
 	},
 ]);

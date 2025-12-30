@@ -24,12 +24,6 @@
 	"packFolders": [],
 	"flags": {
 		"canUpload": true,
-		"dnd5e": {
-			"sourceBooks": {
-				"module-template": "Example Title"
-			},
-			"spellLists": []
-		},
 		"hotReload": {
 			"extensions": ["css", "json"],
 			"paths": ["styles"]

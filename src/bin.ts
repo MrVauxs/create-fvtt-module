@@ -3,9 +3,11 @@ import * as p from "@clack/prompts";
 import { cyan } from "kolorist";
 import { mkdir, cp } from "fs/promises";
 import { packs, systems } from "./options";
+import { existsSync, rmSync } from "fs";
 
-p.intro(`Creating new Foundry VTT module...`);
+p.intro(`Creating a new Foundry VTT module...`);
 
+let deleteFolder = false;
 const data = await p.group(
 	{
 		title: () =>
@@ -22,13 +24,36 @@ const data = await p.group(
 						?.toLowerCase()
 						.replace(/\s+/g, "-")
 						.replace(/[^a-z0-9-]/g, "") ?? "my-module",
+				defaultValue:
+					results.title
+						?.toLowerCase()
+						.replace(/\s+/g, "-")
+						.replace(/[^a-z0-9-]/g, "") ?? "my-module",
 				placeholder:
 					results.title
 						?.toLowerCase()
 						.replace(/\s+/g, "-")
 						.replace(/[^a-z0-9-]/g, "") ?? "my-module",
 			}),
-		description: () => p.text({ message: "Module Description?" }),
+		exists: async ({ results }: any) => {
+			const exists = existsSync(`./${results.id}`);
+			if (exists) {
+				const confirm = await p.confirm({
+					message: "Folder already exists. Overwrite?",
+					initialValue: false,
+				});
+				if (!confirm) {
+					p.cancel("Cancelled due to already existing folder.");
+					process.exit(0);
+				} else {
+					deleteFolder = true;
+				}
+			}
+			return Promise.resolve();
+		},
+
+		description: () =>
+			p.text({ message: "Module Description?", defaultValue: "" }),
 		version: () =>
 			p.select({
 				message: "Foundry Version?",
@@ -76,9 +101,15 @@ const data = await p.group(
 	{ onCancel: () => process.exit(0) },
 );
 
-console.log(data);
-
 await p.tasks([
+	{
+		title: "Deleting existing directory",
+		enabled: deleteFolder,
+		task: async () => {
+			if (deleteFolder) rmSync(data.id, { recursive: true });
+			return "Existing directory deleted";
+		},
+	},
 	{
 		title: "Making directory",
 		task: async () => {
@@ -96,7 +127,7 @@ await p.tasks([
 		},
 	},
 	{
-		title: "Modifying files",
+		title: "Writing module.json",
 		task: async () => {
 			const modPath = `${data.id}/module.json`;
 			const mod = (await Bun.file(modPath).json()) as Record<string, any>;
@@ -136,6 +167,39 @@ await p.tasks([
 			}
 
 			await Bun.write(modPath, JSON.stringify(mod, null, "\t"));
+		},
+	},
+	{
+		title: "Writing README.md",
+		task: async () => {
+			const readmePath = `${data.id}/README.md`;
+			const readme = `# ${data.title}
+					${data.description}
+
+					## Installation
+
+					\`\`\`
+					cd ${data.id} && bun install
+					\`\`\`
+
+					${
+						data.system.includes("dnd5e")
+							? `
+							D&D5e Wiki: https://github.com/foundryvtt/dnd5e/wiki
+							D&D5e Specific Module Flags: https://github.com/foundryvtt/dnd5e/wiki/Module-Registration`
+							: ""
+					}
+
+					${
+						data.system.includes("pf2e")
+							? `
+							PF2e Wiki: https://github.com/foundryvtt/pf2e/wiki
+							`
+							: ""
+					}
+			`;
+
+			await Bun.write(readmePath, readme);
 		},
 	},
 ]);

@@ -1,14 +1,14 @@
 {
 	"name": "create-fvtt-module",
 	"version": "0.0.1",
-	"module": "index.ts",
+	"module": "src/bin.ts",
 	"type": "module",
 	"private": true,
 	"bin": {
-		"create-myrepo": "./bin.js"
+		"create-fvtt-module": "./src/bin.ts"
 	},
 	"files": [
-		"bin.js",
+		"src/",
 		"templates/"
 	],
 	"devDependencies": {

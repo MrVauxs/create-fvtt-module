@@ -1,22 +1,62 @@
 {
 	"name": "create-fvtt-module",
 	"version": "0.0.1",
-	"module": "src/bin.ts",
+	"description": "A CLI tool to scaffold Foundry VTT modules",
+	"keywords": [
+		"foundry-vtt",
+		"module",
+		"scaffold",
+		"cli"
+	],
+	"license": "MIT",
+	"author": "mrvauxs",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/MrVauxs/create-fvtt-module"
+	},
+	"homepage": "https://github.com/MrVauxs/create-fvtt-module#readme",
+	"bugs": {
+		"url": "https://github.com/MrVauxs/create-fvtt-module/issues"
+	},
 	"type": "module",
-	"private": true,
+	"main": "./dist/index.js",
+	"exports": {
+		".": {
+			"import": "./dist/index.js",
+			"types": "./dist/index.d.ts"
+		},
+		"./bin": {
+			"import": "./dist/bin.js",
+			"types": "./dist/bin.d.ts"
+		}
+	},
 	"bin": {
-		"create-fvtt-module": "./src/bin.ts"
+		"create-fvtt-module": "./dist/bin.js"
 	},
 	"files": [
-		"src/",
-		"templates/"
+		"dist/",
+		"templates/",
+		"LICENSE",
+		"README.md"
 	],
+	"scripts": {
+		"build": "tsc",
+		"build:watch": "tsc --watch",
+		"prepublishOnly": "npm run build",
+		"prepack": "npm run build",
+		"dev": "bun src/bin.ts"
+	},
 	"devDependencies": {
 		"@types/bun": "latest",
+		"@types/node": "^20",
 		"@clack/prompts": "^0.11.0",
-		"kolorist": "^1.8.0"
+		"kolorist": "^1.8.0",
+		"typescript": "^5"
 	},
 	"peerDependencies": {
 		"typescript": "^5"
+	},
+	"engines": {
+		"node": ">=18.0.0"
 	}
 }

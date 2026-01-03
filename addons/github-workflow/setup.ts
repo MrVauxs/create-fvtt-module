@@ -34,6 +34,7 @@ const moduleDir = process.env.MODULE_DIR || process.cwd();
 
 let mainYml = mainYmlTemplate;
 
+// I should probably just make this a JSON and convert it to accursed YAML at the end step...
 if (data.features.includes("discord") || data.features.includes("ftp")) {
 	mainYml += `
             # https://stackoverflow.com/questions/61919141/read-json-file-in-github-actions

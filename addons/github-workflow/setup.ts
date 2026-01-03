@@ -5,6 +5,7 @@
 // - Discord webhook notifications
 
 import * as p from "@clack/prompts";
+import { cyan } from "kolorist";
 import { mkdir } from "fs/promises";
 
 const data = await p.group(
@@ -13,6 +14,7 @@ const data = await p.group(
 			p.multiselect({
 				message: "Additional features?",
 				initialValues: [],
+        required: false,
 				options: [
 					// { label: "Prereleases", value: "prereleases" },
 					{ label: "Uploading via FTP", value: "ftp" },
@@ -40,7 +42,7 @@ if (data.features.includes("discord") || data.features.includes("ftp")) {
 
             - name: Get FTP Path
               id: ftp
-              run: echo "ftp=\${{fromJson(steps.set_var.outputs.PACKAGE_JSON).flags.path}}" >> "$GITHUB_OUTPUT"
+              run: echo "ftp=\${{fromJson(steps.set_var.outputs.PACKAGE_JSON).flags.ftpPath}}" >> "$GITHUB_OUTPUT"
 
             - name: Get Module ID
               id: module_id
@@ -96,3 +98,12 @@ if (data.features.includes("discord")) {
 const workflowDir = `${moduleDir}/.github/workflows`;
 await mkdir(workflowDir, { recursive: true });
 await Bun.write(`${workflowDir}/main.yml`, mainYml);
+
+let note = "✅ Installed!";
+if (data.features.includes("discord"))
+	note +=
+		"\nFor the Discord integration, make sure to create a DISCORD_WEBHOOK secret with the webhook url.";
+if (data.features.includes("ftp"))
+	note += `\nFor the FTP integration, make sure to include the FTP_SERVER, FTP_USERNAME, and FTP_PASSWORD secrets.\n\tThe module JSON also can include a flag stating its subdirectory on the FTP server under ${cyan("flags.ftpPath")}.`;
+
+p.note(note, "Github Workflow");

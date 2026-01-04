@@ -5,9 +5,15 @@
 	"license": "MIT",
 	"scripts": {
 		"build": "vite build",
-		"dev": "vite"
+		"dev": "vite",
+		"extract": "node scripts/extractPacks.mjs"
 	},
-	"devDependencies": {},
+	"devDependencies": {
+		"@foundryvtt/foundryvtt-cli": "^3.0.2",
+		"foundryvtt-sync": "https://github.com/MrVauxs/FoundryVTT-Sync",
+		"postcss-preset-env": "^10.6.0",
+		"vite": "^7.3.0"
+	},
 	"browserslist": [
 		">5%",
 		"not IE 11"

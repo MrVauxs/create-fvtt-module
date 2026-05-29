@@ -25,6 +25,7 @@ const { values: flags, positionals } = parseArgs({
 		"auto-id": { type: "boolean", default: false },
 		template: { type: "string", default: "" },
 		"migrate-from": { type: "string", default: "" },
+		override: { type: "boolean", default: false },
 	},
 	strict: false,
 	allowPositionals: true,
@@ -44,6 +45,7 @@ Options:
   --auto-id              Auto-generate module ID from title
   --template <name>      Specify template to use (e.g., vite, basic)
   --migrate-from <path>  Migrate compendium packs from an existing module (filepath or URL to module.json)
+  --override             Skip confirmation and overwrite existing folder without prompt
 
 Examples:
   create-fvtt-module "My Module" --auto-id
@@ -63,6 +65,7 @@ const cliTitle: string | undefined = positionals[0] as string | undefined;
 const autoId = flags["auto-id"] as boolean;
 const templateFlag = flags.template as string;
 const migrateFromFlag = flags["migrate-from"] as string;
+const overrideFlag = flags.override as boolean;
 
 const moduleIdRegex = /^[a-z0-9-]+$/;
 
@@ -170,6 +173,10 @@ const data = await p.group(
 			const fullPath = resolve(process.cwd(), id);
 			const exists = existsSync(fullPath);
 			if (exists) {
+				if (overrideFlag) {
+					deleteFolder = true;
+					return;
+				}
 				const confirm = await p.confirm({
 					message: `Folder already exists at ${fullPath}. Overwrite?`,
 					initialValue: false,

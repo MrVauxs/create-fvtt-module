@@ -45,7 +45,7 @@
 		"build:watch": "tsc --watch",
 		"prepublishOnly": "npm run build",
 		"prepack": "npm run build",
-		"dev": "bun src/bin.ts \"My New Module\" --auto-id"
+		"dev": "bun src/bin.ts \"My New Module\" --auto-id --override --template vite"
 	},
 	"devDependencies": {
 		"@clack/prompts": "^1.0.0-alpha.9",

@@ -37,29 +37,12 @@ const moduleDir = process.env.MODULE_DIR || process.cwd();
 
 let mainYml = mainYmlTemplate;
 
-// I should probably just make this a JSON and convert it to accursed YAML at the end step...
-if (data.features.includes("discord") || data.features.includes("ftp")) {
+if (data.features.includes("ftp")) {
   mainYml += `
-            # https://stackoverflow.com/questions/61919141/read-json-file-in-github-actions
-            - id: set_var
-              run: echo "PACKAGE_JSON=$(jq -c . < module.json)" >> $GITHUB_OUTPUT
-
             - name: Get FTP Path
               id: ftp
               run: echo "ftp=\${{fromJson(steps.set_var.outputs.PACKAGE_JSON).flags.ftpPath}}" >> $GITHUB_OUTPUT
 
-            - name: Get Module ID
-              id: module_id
-              run: echo "module_id=\${{fromJson(steps.set_var.outputs.PACKAGE_JSON).id}}" >> $GITHUB_OUTPUT
-
-            - name: Get Module Title
-              id: title
-              run: echo "title=\${{fromJson(steps.set_var.outputs.PACKAGE_JSON).title}}" >> $GITHUB_OUTPUT
-`;
-}
-
-if (data.features.includes("ftp")) {
-  mainYml += `
             - name: Put Files into FTP Folder
               env:
                 FTP_PASSWORD: \${{ secrets.FTP_PASSWORD }}

@@ -1,4 +1,5 @@
 packs
+temp/
 
 # dependencies (bun install)
 node_modules

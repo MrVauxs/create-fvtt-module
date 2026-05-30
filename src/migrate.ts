@@ -1,11 +1,10 @@
-import * as p from "@clack/prompts";
-import { mkdir, readdir, rm, readFile, writeFile, stat, copyFile, cp } from "fs/promises";
+import { mkdir, readdir, readFile, writeFile, stat, copyFile, cp } from "fs/promises";
 import { existsSync, readdirSync, statSync } from "fs";
-import { tmpdir } from "os";
 import { join, dirname, relative } from "path";
 import AdmZip from "adm-zip";
 import { extractPack } from "@foundryvtt/foundryvtt-cli";
 import { yellow, cyan } from "kolorist";
+import { SpinnerResult } from "@clack/prompts";
 
 interface PackEntry {
 	label: string;
@@ -31,17 +30,16 @@ function isUrl(input: string): boolean {
 	return input.startsWith("http://") || input.startsWith("https://");
 }
 
-async function readModuleJson(source: string): Promise<ModuleJson> {
+async function readModuleJson(source: string, p: SpinnerResult): Promise<ModuleJson> {
 	if (isUrl(source)) {
-		const spinner = p.spinner();
-		spinner.start(`Fetching module.json from ${cyan(source)}...`);
+		p.message(`Fetching module.json from ${cyan(source)}...`);
 		const response = await fetch(source);
 		if (!response.ok) {
 			throw new Error(`Failed to fetch module.json: ${response.status} ${response.statusText}`);
 		}
 		const text = await response.text();
 		const parsed = JSON.parse(text) as ModuleJson;
-		spinner.stop(`module.json fetched successfully`);
+		p.message(`module.json fetched successfully`);
 		return parsed;
 	}
 
@@ -139,31 +137,30 @@ async function copyAssetsToMigration(moduleRoot: string): Promise<number> {
 	return copiedCount;
 }
 
-export async function migrateFrom(source: string, modulePath: string): Promise<void> {
-	const sourceModuleJson = await readModuleJson(source);
+export async function migrateFrom(source: string, modulePath: string, p: SpinnerResult): Promise<void> {
+	const sourceModuleJson = await readModuleJson(source, p);
 
 	if (!sourceModuleJson.download) {
 		throw new Error("No download URL found in module.json. The source module does not have a download property.");
 	}
 
 	if (!sourceModuleJson.packs || sourceModuleJson.packs.length === 0) {
-		p.log.warn("No packs found in the source module.json.");
+		p.message("No packs found in the source module.json.");
 		return;
 	}
 
-	p.log.step(`Downloading module from ${cyan(sourceModuleJson.download)}`);
+	p.message(`Downloading module from ${cyan(sourceModuleJson.download)}`);
 
-	const tempDir = join(tmpdir(), `fvtt-migrate-${Date.now()}`);
-	const extractDir = join(tempDir, "extracted");
+	const tempDir = join(modulePath, "temp", `${sourceModuleJson.id || `module-${Date.now()}`}`);
 
 	try {
 		await mkdir(tempDir, { recursive: true });
 		const zipBuffer = await downloadZipBuffer(sourceModuleJson.download);
 		const zip = new AdmZip(zipBuffer);
-		zip.extractAllTo(extractDir, true);
+		zip.extractAllTo(tempDir, true);
 
-		const moduleRoot = findModuleRoot(extractDir);
-		p.log.step(`Found ${sourceModuleJson.packs.length} pack(s) in module.json: ${sourceModuleJson.packs.map((p) => p.name).join(", ")}`);
+		const moduleRoot = findModuleRoot(tempDir);
+		p.message(`Found ${sourceModuleJson.packs.length} pack(s) in module.json: ${sourceModuleJson.packs.map((p) => p.name).join(", ")}`);
 
 		const targetPacksDir = join(modulePath, "packs");
 		const targetDataDir = join(modulePath, "data");
@@ -184,16 +181,16 @@ export async function migrateFrom(source: string, modulePath: string): Promise<v
 			if (await isLevelDBFolder(sourcePackPath)) {
 				sourceInputPath = sourcePackPath;
 				isFolder = true;
-			} else if (existsSync(sourceDbFile)) {
+			} else if (existsSync(join(sourcePackPath, dbFileName))) {
 				sourceInputPath = sourceDbFile;
 			}
 
 			if (!sourceInputPath) {
-				p.log.warn(`Pack not found at ${sourcePackPath} or ${sourceDbFile}. Skipping ${pack.name}.`);
+				p.message(`Pack not found at ${sourcePackPath} or ${sourceDbFile}. Skipping ${pack.name}.`);
 				continue;
 			}
 
-			p.log.step(`Extracting ${yellow(pack.name)}...`);
+			p.message(`Extracting ${yellow(pack.name)}...`);
 
 			if (isFolder) {
 				await cp(sourceInputPath, join(targetPacksDir, pack.name), { recursive: true });
@@ -244,16 +241,17 @@ export async function migrateFrom(source: string, modulePath: string): Promise<v
 				}
 
 				await writeFile(targetModuleJsonPath, JSON.stringify(targetModuleJson, null, "\t"));
-				p.log.step("Updated module.json with migrated packs");
+				p.message("Updated module.json with migrated packs");
 			}
 		}
 
-		p.log.step("Extracting CSS and JS assets...");
+		p.message("Extracting CSS and JS assets...");
 		const assetCount = await copyAssetsToMigration(moduleRoot);
-		p.log.info(`Copied ${assetCount} asset(s) to src/migration/`);
+		p.message(`Copied ${assetCount} asset(s) to src/migration/`);
 
-		p.log.info(`Migration complete! ${newPacks.length} pack(s) processed.`);
-	} finally {
-		await rm(tempDir, { recursive: true, force: true });
+		p.message(`Migration complete! ${newPacks.length} pack(s) processed. Extracted module kept in ${cyan(tempDir)}.`);
+	} catch (error) {
+		p.message(`Migration failed: ${error instanceof Error ? error.message : String(error)}`);
+		throw error;
 	}
 }

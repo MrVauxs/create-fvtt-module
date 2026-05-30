@@ -418,7 +418,7 @@ if (migrateFromFlag) {
 	const spin = p.spinner();
 	spin.start(`Migrating packs from ${cyan(migrateFromFlag)}...`);
 	try {
-		await migrateFrom(migrateFromFlag, modulePath);
+		await migrateFrom(migrateFromFlag, modulePath, spin);
 		spin.stop("Migration completed successfully");
 	} catch (err) {
 		spin.stop(`Migration failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -461,39 +461,37 @@ if (data.enabledAddons && data.enabledAddons.length > 0) {
 const onCreatePath = join(modulePath, "scripts", "onCreate.mjs");
 if (existsSync(onCreatePath)) {
 	const runOnCreate = await p.confirm({
-		message: `Run onCreate script?`,
+		message: "Run onCreate script?",
 		initialValue: true,
 	});
 	if (p.isCancel(runOnCreate)) process.exit(1);
+
 	if (runOnCreate) {
-		const spin = p.spinner();
-		spin.start("[Task] Running onCreate script...");
+		p.note("[Task] Running onCreate script...");
+
 		const onCreateProcess = spawn(process.execPath, [onCreatePath], {
 			cwd: join(modulePath, "scripts"),
+			stdio: "inherit",
+			env: {
+				...process.env,
+				MODULE_DIR: modulePath,
+			},
 		});
-
-		let stdout = "";
-		let stderr = "";
-		onCreateProcess.stdout?.on("data", (chunk: Buffer) => { stdout += chunk.toString(); });
-		onCreateProcess.stderr?.on("data", (chunk: Buffer) => { stderr += chunk.toString(); });
 
 		await new Promise<void>((resolve, reject) => {
 			onCreateProcess.on("close", (code) => {
 				if (code === 0) {
 					resolve();
-				} else {
-					reject(new Error(`onCreate script failed with exit code ${code}`));
+					return;
 				}
+
+				reject(new Error(`onCreate script failed with exit code ${code}`));
 			});
+
 			onCreateProcess.on("error", reject);
 		});
-		if (stdout.trim()) {
-			p.log.info(stdout.trim());
-		}
-		if (stderr.trim()) {
-			p.log.error(stderr.trim());
-		}
-		spin.stop("onCreate script completed");
+
+		p.log.success("onCreate script completed");
 	}
 }
 

@@ -2,7 +2,7 @@ import * as p from "@clack/prompts";
 import { mkdir, readdir, rm, readFile, writeFile, stat, copyFile, cp } from "fs/promises";
 import { existsSync, readdirSync, statSync } from "fs";
 import { tmpdir } from "os";
-import { join } from "path";
+import { join, dirname, relative } from "path";
 import AdmZip from "adm-zip";
 import { extractPack } from "@foundryvtt/foundryvtt-cli";
 import { yellow, cyan } from "kolorist";
@@ -101,6 +101,42 @@ async function isLevelDBFolder(folderPath: string): Promise<boolean> {
 	const entries = await readdir(folderPath);
 	const levelDBMarkers = ["CURRENT", "LOCK", "MANIFEST-000001", "MANIFEST-000002"];
 	return entries.some((e) => levelDBMarkers.some((m) => e === m || e.endsWith(".ldb") || e.endsWith(".log")));
+}
+
+async function findFiles(dir: string, baseDir: string, extensions: string[]): Promise<string[]> {
+	const results: string[] = [];
+	const entries = await readdir(dir, { withFileTypes: true });
+
+	for (const entry of entries) {
+		const fullPath = join(dir, entry.name);
+		if (entry.isDirectory()) {
+			results.push(...await findFiles(fullPath, baseDir, extensions));
+		} else if (extensions.some((ext) => entry.name.endsWith(ext))) {
+			results.push(fullPath);
+		}
+	}
+
+	return results;
+}
+
+async function copyAssetsToMigration(moduleRoot: string): Promise<number> {
+	const migrationDir = join("src", "migration");
+	await mkdir(migrationDir, { recursive: true });
+
+	const cssJsFiles = await findFiles(moduleRoot, moduleRoot, [".css", ".js"]);
+	let copiedCount = 0;
+
+	for (const filePath of cssJsFiles) {
+		const relativePath = relative(moduleRoot, filePath);
+		const destPath = join(migrationDir, relativePath.replace(/^[\\/]/, ""));
+		const destDir = dirname(destPath);
+
+		await mkdir(destDir, { recursive: true });
+		await copyFile(filePath, destPath);
+		copiedCount++;
+	}
+
+	return copiedCount;
 }
 
 export async function migrateFrom(source: string, modulePath: string): Promise<void> {
@@ -211,6 +247,10 @@ export async function migrateFrom(source: string, modulePath: string): Promise<v
 				p.log.step("Updated module.json with migrated packs");
 			}
 		}
+
+		p.log.step("Extracting CSS and JS assets...");
+		const assetCount = await copyAssetsToMigration(moduleRoot);
+		p.log.info(`Copied ${assetCount} asset(s) to src/migration/`);
 
 		p.log.info(`Migration complete! ${newPacks.length} pack(s) processed.`);
 	} finally {

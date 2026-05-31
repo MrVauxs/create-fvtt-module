@@ -290,9 +290,11 @@ await p.tasks([
 	},
 	{
 		title: "[Task] Writing module.json",
-		task: async () => {
+		task: async (m) => {
 			const modPath = join(modulePath, "module.json");
+			m(`Reading template module.json from ${modPath}...`);
 			const mod = JSON.parse(await readFile(modPath, "utf8")) as Record<string, unknown>;
+			m(`Populating module.json with provided data...`);
 
 			mod.id = data.id;
 			mod.title = data.title;
@@ -357,7 +359,7 @@ await p.tasks([
 
 			await writeFile(modPath, JSON.stringify(mod, null, "\t"));
 
-			return "module.json created";
+			return "module.json populated";
 		},
 	},
 	{

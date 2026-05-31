@@ -5,12 +5,44 @@ import { mkdir, cp, readFile, writeFile } from "fs/promises";
 import { existsSync, readdirSync, rmSync, statSync } from "fs";
 import { join, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { spawn } from "child_process";
+import { spawn, execSync } from "child_process";
 import { parseArgs } from "util";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+
+async function checkForUpdates() {
+	try {
+		const response = await fetch(`https://registry.npmjs.org/${pkg.name}/latest`);
+		if (!response.ok) return;
+		const latestPkg = await response.json() as typeof pkg;
+		if (latestPkg.version !== pkg.version) {
+			const packageManagers = [
+				{ name: "bun", command: `bun add -g ${pkg.name}@latest --no-cache`, test: "bun --version" },
+				{ name: "pnpm", command: `pnpm add -g ${pkg.name}@latest`, test: "pnpm --version" },
+				{ name: "yarn", command: `yarn global add ${pkg.name}@latest`, test: "yarn --version" },
+				{ name: "npm", command: `npm install -g ${pkg.name}@latest`, test: "npm --version" },
+			];
+			let detectedCommand = `npm install -g ${pkg.name}@latest`;
+			for (const manager of packageManagers) {
+				try {
+					execSync(manager.test, { stdio: "ignore" });
+					detectedCommand = manager.command;
+					break;
+				} catch {
+					// continue to next manager
+				}
+			}
+			console.log(`\n${cyan("Update available:")} ${pkg.version} → ${latestPkg.version}`);
+			console.log(`Run: ${lightGreen(detectedCommand)}\n`);
+		}
+	} catch {
+		// silently fail if update check doesn't work
+	}
+}
+
+await checkForUpdates();
 
 import { packs, systems, foundryVersions } from "./options.js";
 import { migrateFrom } from "./migrate.js";

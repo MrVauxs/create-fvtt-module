@@ -113,7 +113,49 @@ if (existsSync(pkgPath)) {
   p.log.warn("⚠️ package.json not found, skipping exports update");
 }
 
+// ── README.md — append types & usage section ──────────────────────────────
+
+const readmePath = join(moduleDir, "README.md");
+if (existsSync(readmePath)) {
+  const readmeSection = `
+## Using the API
+
+Other modules can consume \`${moduleId}\`'s typed API by installing it as a GitHub dependency:
+
+\`\`\`sh
+npm install github:YOUR_USERNAME/${moduleId}
+\`\`\`
+
+Then import the types either directly in the code or tsconfig.json:
+
+\`\`\`ts
+# Import types directly
+import "${moduleId}/types";
+
+# Or add to tsconfig.json
+{
+  "compilerOptions": {
+    "types": ["${moduleId}/types"]
+  }
+}
+\`\`\`
+
+To call methods at runtime, read from the module's global:
+
+\`\`\`ts
+const { doSomething } = globalThis.${globalName}.api;
+doSomething();
+\`\`\`
+`;
+
+  const readmeContent = await readFile(readmePath, "utf8");
+  await writeFile(readmePath, readmeContent + readmeSection);
+  p.log.success(`Updated ${cyan("README.md")} with types & usage section`);
+} else {
+  p.log.warn("⚠️ README.md not found, skipping documentation update");
+}
+
 p.note(
   `✅ Installed!\nOther modules can now import your types:\n  ${cyan(`import type { API } from "${moduleId}/types";`)}`,
-  "Typed API"
+  "Typed Module API"
 );

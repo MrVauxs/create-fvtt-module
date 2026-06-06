@@ -3,6 +3,9 @@ temp/
 dist/
 *.tsbuildinfo
 .vite-cache
+templates/*/package-lock.json
+templates/*/yarn.lock
+templates/*/bun.lock
 
 # Logs
 logs

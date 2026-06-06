@@ -46,11 +46,7 @@ jobs:
 
       - name: Extract Changelog
         id: changelog
-        uses: nickohold/changelog-version-extractor@v1.0.0
-        with:
-          version_prefix: "# "
-          version: ${{ steps.get-version.outputs.v }}
-          changelog_path: "CHANGELOG.md"
+        run: node .github/scripts/extract-changelog.mjs ${{ steps.get-version.outputs.v }} "# " "CHANGELOG.md"
 
         # Create a zip file with all files required by the module to add to the release.
       - name: Bundle into ZIP file

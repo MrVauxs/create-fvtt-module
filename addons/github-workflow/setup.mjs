@@ -31,6 +31,7 @@ const data = await p.group(
 
 // Grab main.yml template
 const mainYmlTemplate = await readFile(`${__dirname}/main.yml`, "utf8");
+const extractChangelog = await readFile(`${__dirname}/extract-changelog.mjs`, "utf8");
 
 // Get the module directory from environment variable
 const moduleDir = process.env.MODULE_DIR || process.cwd();
@@ -81,10 +82,13 @@ if (data.features.includes("discord")) {
 `;
 }
 
-// Create main.yml file
-const workflowDir = `${moduleDir}/.github/workflows`;
+// Create main.yml and extract-changelog.mjs files
+const workflowDir = `${moduleDir}/.github`;
 await mkdir(workflowDir, { recursive: true });
-await writeFile(`${workflowDir}/main.yml`, mainYml);
+await mkdir(`${workflowDir}/workflows`, { recursive: true });
+await mkdir(`${workflowDir}/scripts`, { recursive: true });
+await writeFile(`${workflowDir}/workflows/main.yml`, mainYml);
+await writeFile(`${workflowDir}/scripts/extract-changelog.mjs`, extractChangelog);
 
 let note = "✅ Installed!";
 note += "\nThe Github workflow is triggered by making a new release. To make a new release go to your repository's Releases page which can be found in the sidebar on the right and press \"Draft a new release.\" Fill in the version number and you're done!"

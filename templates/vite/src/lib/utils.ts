@@ -1,4 +1,4 @@
-import Document from "@7h3laughingman/foundry-types/common/abstract/document.mjs";
+import type Document from "@7h3laughingman/foundry-types/common/abstract/document.mjs";
 
 export const dev = import.meta.env.DEV;
 

@@ -1,0 +1,5 @@
+{
+	"name": "Typed Module API",
+	"description": "Adds a typed API template with types.d.ts, api.ts, and package.json exports.",
+	"default": true
+}

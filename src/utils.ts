@@ -1,3 +1,5 @@
+import { execSync } from "child_process";
+
 interface SystemDefinition {
 	id: string;
 	type: string;
@@ -91,6 +93,23 @@ export function buildPacks(
 			path: `packs/${system}-${pack.name}`,
 		})),
 	);
+}
+
+/**
+ * Returns the name of the first package manager found on PATH.
+ * Checks bun → pnpm → yarn → npm, falling back to "npm".
+ */
+export function detectPackageManager(): "bun" | "pnpm" | "yarn" | "npm" {
+	const candidates = ["bun", "pnpm", "yarn", "npm"] as const;
+	for (const pm of candidates) {
+		try {
+			execSync(`${pm} --version`, { stdio: "ignore" });
+			return pm;
+		} catch {
+			// not available
+		}
+	}
+	return "npm";
 }
 
 /** Parses JSON, throwing a friendly error that names the offending source. */

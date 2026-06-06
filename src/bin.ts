@@ -7,12 +7,13 @@ import { join, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { spawn, execSync } from "child_process";
 import { parseArgs } from "util";
-import { isNewerVersion, slugify, isValidModuleId, safeJsonParse } from "./utils.js";
+import { isNewerVersion, slugify, isValidModuleId, safeJsonParse, detectPackageManager } from "./utils.js";
 import { scaffoldModule, type ScaffoldConfig, type PackEntry } from "./scaffold.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const pkg = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+const pm = detectPackageManager();
 
 async function checkForUpdates() {
 	try {
@@ -20,24 +21,14 @@ async function checkForUpdates() {
 		if (!response.ok) return;
 		const latestPkg = await response.json() as typeof pkg;
 		if (isNewerVersion(latestPkg.version, pkg.version)) {
-			const packageManagers = [
-				{ name: "bun", command: `bun add -g ${pkg.name}@latest --no-cache`, test: "bun --version" },
-				{ name: "pnpm", command: `pnpm add -g ${pkg.name}@latest`, test: "pnpm --version" },
-				{ name: "yarn", command: `yarn global add ${pkg.name}@latest`, test: "yarn --version" },
-				{ name: "npm", command: `npm install -g ${pkg.name}@latest`, test: "npm --version" },
-			];
-			let detectedCommand = `npm install -g ${pkg.name}@latest`;
-			for (const manager of packageManagers) {
-				try {
-					execSync(manager.test, { stdio: "ignore" });
-					detectedCommand = manager.command;
-					break;
-				} catch {
-					// continue to next manager
-				}
-			}
+			const updateCommands: Record<string, string> = {
+				bun: `bun add -g ${pkg.name}@latest --no-cache`,
+				pnpm: `pnpm add -g ${pkg.name}@latest`,
+				yarn: `yarn global add ${pkg.name}@latest`,
+				npm: `npm install -g ${pkg.name}@latest`,
+			};
 			console.log(`\n${cyan("Update available:")} ${pkg.version} → ${latestPkg.version}`);
-			console.log(`Run: ${lightGreen(detectedCommand)}\n`);
+			console.log(`Run: ${lightGreen(updateCommands[pm]!)}\n`);
 		}
 	} catch {
 		// silently fail if update check doesn't work
@@ -103,6 +94,8 @@ const overrideFlag = flags.override as boolean;
 
 interface Results extends ScaffoldConfig {
 	enabledAddons: string[];
+	installDeps: boolean;
+	initGit: boolean;
 }
 
 p.intro(`${lightGreen(pkg.name)} v${pkg.version}`);
@@ -263,9 +256,24 @@ const data = await p.group(
 			}
 			return Promise.resolve([]);
 		},
+		installDeps: (opts) => {
+			const template = opts.results.template as string | undefined;
+			if (!template) return Promise.resolve(false);
+			const templateHasPackageJson = existsSync(join(packageDir("../templates"), template, "package.json"));
+			if (!templateHasPackageJson) return Promise.resolve(false);
+			return p.confirm({
+				message: "Install dependencies?",
+				initialValue: true,
+			});
+		},
+		initGit: () =>
+			p.confirm({
+				message: "Initialize a git repository?",
+				initialValue: true,
+			}),
 	},
 	{ onCancel: () => process.exit(1) },
-) as Results;
+) as unknown as Results;
 
 const modulePath = resolve(process.cwd(), data.id);
 
@@ -284,6 +292,24 @@ await p.tasks([
 				onProgress: m,
 			});
 			return "Module scaffolded";
+		},
+	},
+	{
+		enabled: data.initGit,
+		title: "[Task] Initializing git repository",
+		task: async () => {
+			execSync("git init", { cwd: modulePath, stdio: "ignore" });
+			execSync("git add -A", { cwd: modulePath, stdio: "ignore" });
+			execSync('git commit -m "create-fvtt-module init"', { cwd: modulePath, stdio: "ignore" });
+			return "Git repository initialized";
+		},
+	},
+	{
+		enabled: data.installDeps,
+		title: `[Task] Installing dependencies`,
+		task: async () => {
+			execSync(`${pm} install`, { cwd: modulePath, stdio: "ignore" });
+			return "Dependencies installed";
 		},
 	},
 ]);
@@ -369,4 +395,5 @@ if (existsSync(onCreatePath)) {
 	}
 }
 
-p.outro(`cd ${cyan(data.id)} ${hasPackageJSON() ? "&& bun install" : "and get to making stuff!"}`);
+const nextStep = hasPackageJSON() && !data.installDeps ? `&& ${pm} install` : "and get to making stuff!";
+p.outro(`cd ${cyan(data.id)} ${nextStep}`);

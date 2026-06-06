@@ -21,6 +21,7 @@ const data = await p.group(
         required: false,
         options: [
           // { label: "Prereleases", value: "prereleases" },
+          { label: "Changelog extraction", value: "changelog" },
           { label: "Uploading via FTP", value: "ftp" },
           { label: "Discord webhook on updates", value: "discord" },
         ],
@@ -31,12 +32,32 @@ const data = await p.group(
 
 // Grab main.yml template
 const mainYmlTemplate = await readFile(`${__dirname}/main.yml`, "utf8");
-const extractChangelog = await readFile(`${__dirname}/extract-changelog.mjs`, "utf8");
+const extractChangelogScript = await readFile(`${__dirname}/extract-changelog.mjs`, "utf8");
 
 // Get the module directory from environment variable
 const moduleDir = process.env.MODULE_DIR || process.cwd();
 
 let mainYml = mainYmlTemplate;
+
+if (data.features.includes("changelog")) {
+  mainYml = mainYml.replace(
+    "        # Create a zip file with all files required by the module to add to the release.",
+    `      - name: Extract Changelog
+        id: changelog
+        run: node .github/scripts/extract-changelog.mjs \${{ steps.get-version.outputs.v }} "# " "CHANGELOG.md"
+
+        # Create a zip file with all files required by the module to add to the release.`
+  );
+  mainYml = mainYml.replace(
+    '"CHANGELOG_BODY_PLACEHOLDER"',
+    "${{ steps.changelog.outputs.changelog }}"
+  );
+} else {
+  mainYml = mainYml.replace(
+    '\n          body: "CHANGELOG_BODY_PLACEHOLDER"',
+    ""
+  );
+}
 
 if (data.features.includes("ftp")) {
   mainYml += `
@@ -82,17 +103,22 @@ if (data.features.includes("discord")) {
 `;
 }
 
-// Create main.yml and extract-changelog.mjs files
+// Create workflow files
 const workflowDir = `${moduleDir}/.github`;
 await mkdir(workflowDir, { recursive: true });
 await mkdir(`${workflowDir}/workflows`, { recursive: true });
-await mkdir(`${workflowDir}/scripts`, { recursive: true });
 await writeFile(`${workflowDir}/workflows/main.yml`, mainYml);
-await writeFile(`${workflowDir}/scripts/extract-changelog.mjs`, extractChangelog);
+
+if (data.features.includes("changelog")) {
+  await mkdir(`${workflowDir}/scripts`, { recursive: true });
+  await writeFile(`${workflowDir}/scripts/extract-changelog.mjs`, extractChangelogScript);
+}
 
 let note = "✅ Installed!";
 note += "\nThe Github workflow is triggered by making a new release. To make a new release go to your repository's Releases page which can be found in the sidebar on the right and press \"Draft a new release.\" Fill in the version number and you're done!"
 
+if (data.features.includes("changelog"))
+  note += "\n - Changelog extraction reads from CHANGELOG.md using \"# \" as the version header prefix.";
 if (data.features.includes("discord"))
   note +=
     "\n - For the Discord integration, make sure to create a DISCORD_WEBHOOK secret with the webhook url.";

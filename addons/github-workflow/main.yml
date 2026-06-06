@@ -44,10 +44,6 @@ jobs:
       - name: Build distribution
         run: bun run build
 
-      - name: Extract Changelog
-        id: changelog
-        run: node .github/scripts/extract-changelog.mjs ${{ steps.get-version.outputs.v }} "# " "CHANGELOG.md"
-
         # Create a zip file with all files required by the module to add to the release.
       - name: Bundle into ZIP file
         run: zip -r ./module.zip module.json assets/ dist/ packs/ lang/
@@ -60,7 +56,7 @@ jobs:
           allowUpdates: true # Set this to false if you want to prevent updating existing releases.
           name: "${{ steps.title.outputs.title }}-${{ github.event.release.tag_name }}"
           tag: ${{ github.event.release.tag_name }}
-          body: ${{ steps.changelog.outputs.changelog }}
+          body: "CHANGELOG_BODY_PLACEHOLDER"
           artifacts: "./module.json, ./module.zip"
           omitDraftDuringUpdate: true
           omitPrereleaseDuringUpdate: true

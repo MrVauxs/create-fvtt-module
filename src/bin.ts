@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import * as p from "@clack/prompts";
 import { cyan, lightGreen } from "kolorist";
-import { mkdir, cp, readFile, writeFile } from "fs/promises";
-import { existsSync, readdirSync, rmSync, statSync } from "fs";
+import { readFile } from "fs/promises";
+import { existsSync, readdirSync, statSync } from "fs";
 import { join, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { spawn, execSync } from "child_process";
 import { parseArgs } from "util";
+import { isNewerVersion, slugify, isValidModuleId, safeJsonParse } from "./utils.js";
+import { scaffoldModule, type ScaffoldConfig, type PackEntry } from "./scaffold.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -17,7 +19,7 @@ async function checkForUpdates() {
 		const response = await fetch(`https://registry.npmjs.org/${pkg.name}/latest`);
 		if (!response.ok) return;
 		const latestPkg = await response.json() as typeof pkg;
-		if (latestPkg.version !== pkg.version) {
+		if (isNewerVersion(latestPkg.version, pkg.version)) {
 			const packageManagers = [
 				{ name: "bun", command: `bun add -g ${pkg.name}@latest --no-cache`, test: "bun --version" },
 				{ name: "pnpm", command: `pnpm add -g ${pkg.name}@latest`, test: "pnpm --version" },
@@ -99,27 +101,7 @@ const templateFlag = flags.template as string;
 const migrateFromFlag = flags["migrate-from"] as string;
 const overrideFlag = flags.override as boolean;
 
-const moduleIdRegex = /^[a-z0-9-]+$/;
-
-interface PackEntry {
-	label: string;
-	name: string;
-	path: string;
-	system: string;
-	type: string;
-	ownership: Record<string, string>;
-}
-
-interface Results {
-	template: string;
-	title: string;
-	id: string;
-	description: string;
-	version: string;
-	system: string[];
-	packs: PackEntry[];
-	containPacks: boolean;
-	containPacksFolder?: string;
+interface Results extends ScaffoldConfig {
 	enabledAddons: string[];
 }
 
@@ -143,7 +125,8 @@ interface Addon {
 
 const addons: (Addon & { id: string })[] = await Promise.all(
 	addonDirs.map(async (dir) => {
-		const addonJson = JSON.parse(await readFile(packageDir(`../addons/${dir}/addon.json`), "utf8")) as Addon;
+		const addonPath = packageDir(`../addons/${dir}/addon.json`);
+		const addonJson = safeJsonParse<Addon>(await readFile(addonPath, "utf8"), addonPath);
 		return {
 			...addonJson,
 			id: dir,
@@ -156,6 +139,9 @@ const data = await p.group(
 		template: async () => {
 			if (templateFlag && templates.includes(templateFlag)) {
 				return templateFlag;
+			}
+			if (templateFlag) {
+				p.log.warn(`Unknown template "${templateFlag}". Available: ${templates.join(", ")}`);
 			}
 			if (templates.length === 1) {
 				return templates[0]!;
@@ -179,11 +165,7 @@ const data = await p.group(
 			});
 		},
 		id: (opts) => {
-			const defaultId =
-				(opts.results.title as string | undefined)
-					?.toLowerCase()
-					.replace(/\s+/g, "-")
-					.replace(/[^a-z0-9-]/g, "") ?? "my-module";
+			const defaultId = slugify(opts.results.title as string | undefined);
 			if (autoId) return Promise.resolve(defaultId);
 			return p.text({
 				message: "Module ID?",
@@ -194,7 +176,7 @@ const data = await p.group(
 					if (!value) {
 						return "Module ID is required";
 					}
-					if (!moduleIdRegex.test(value)) {
+					if (!isValidModuleId(value)) {
 						return "Module ID must be lowercase alphanumeric with hyphens only (e.g., my-awesome-module)";
 					}
 				},
@@ -293,157 +275,15 @@ function hasPackageJSON(): boolean {
 
 await p.tasks([
 	{
-		title: "[Task] Deleting existing directory",
-		enabled: deleteFolder,
-		task: async () => {
-			if (deleteFolder) rmSync(modulePath, { recursive: true, force: true });
-			return "Existing directory deleted";
-		},
-	},
-	{
-		title: "[Task] Making directory",
-		task: async () => {
-			await mkdir(modulePath, { recursive: true });
-			return `${modulePath} directory created`;
-		},
-	},
-	{
-		title: "[Task] Copying template",
-		task: async () => {
-			await cp(
-				join(__dirname, `../templates/${data.template}`),
-				modulePath,
-				{
-					recursive: true,
-				},
-			);
-			return "Template copied";
-		},
-	},
-	{
-		title: "[Task] Writing module.json",
+		title: "[Task] Scaffolding module",
 		task: async (m) => {
-			const modPath = join(modulePath, "module.json");
-			m(`Reading template module.json from ${modPath}...`);
-			const mod = JSON.parse(await readFile(modPath, "utf8")) as Record<string, unknown>;
-			m(`Populating module.json with provided data...`);
-
-			mod.id = data.id;
-			mod.title = data.title;
-			mod.description = data.description;
-			mod.compatibility = {
-				minimum: data.version,
-				verified: data.version,
-			};
-			mod.relationships = {
-				systems: data.system.map((system) =>
-					systems.find((s) => s.id === system),
-				),
-			};
-			mod.packs = data.packs.flatMap((pack) =>
-				data.system.map((system) => ({
-					...pack,
-					system,
-					name: `${system}-${pack.name}`,
-					path: `packs/${system}-${pack.name}`
-				})),
-			);
-			if (data.containPacks) {
-				mod.packFolders = [
-					{
-						name: data.containPacksFolder,
-						sorting: "m",
-						color: "#00000f",
-						packs: (mod.packs as Array<{ name: string }>).map((x) => x.name),
-					},
-				];
-			}
-			if (data.system.includes("dnd5e")) {
-				(mod.flags as Record<string, unknown>) ??= {};
-				(mod.flags as Record<string, unknown>).dnd5e = {
-					sourceBooks: {
-						[data.id]: data.title,
-					},
-					spellLists: [],
-				};
-			}
-			if (data.system.includes("pf2e")) {
-				(mod.flags as Record<string, unknown>) ??= {};
-				(mod.flags as Record<string, Record<string, unknown>>)[data.id] = {
-					'pf2e-homebrew': {
-						classTraits: {},
-						creatureTraits: {},
-						damageTypes: {},
-						featTraits: {},
-						languages: {},
-						magicSchools: {},
-						skills: {},
-						spellTraits: {},
-						weaponCategories: {},
-						weaponGroups: {},
-						baseWeapons: {},
-						weaponTraits: {},
-						equipmentTraits: {},
-						shieldTraits: {},
-					},
-				};
-			}
-
-			await writeFile(modPath, JSON.stringify(mod, null, "\t"));
-
-			return "module.json populated";
-		},
-	},
-	{
-		title: "[Task] Writing README.md",
-		task: async () => {
-			const readmeParts: string[] = [];
-			readmeParts.push(`# ${data.title}`);
-			readmeParts.push(data.description);
-			readmeParts.push("");
-			readmeParts.push("## Installation");
-			readmeParts.push("");
-			readmeParts.push("```");
-			readmeParts.push(`cd ${data.id} ${hasPackageJSON() ? "&& bun install" : "and get to making stuff!"}`);
-			readmeParts.push("```");
-
-			if (data.template === "vite") {
-				readmeParts.push("");
-				readmeParts.push("## Scripts");
-				readmeParts.push("");
-				readmeParts.push("| Script | Description |");
-				readmeParts.push("|--------|-------------|");
-				readmeParts.push("| `dev` | Start the development server with HMR |");
-				readmeParts.push("| `build` | Build the module for production |");
-				readmeParts.push("| `symlink` | Symlink the module to your Foundry data directory |");
-				readmeParts.push("| `extract` | Extract Foundry compendium packs |");
-			}
-
-			readmeParts.push("");
-			readmeParts.push("## Resources");
-			readmeParts.push("");
-
-			if (data.system.includes("dnd5e")) {
-				readmeParts.push("D&D5e Wiki: https://github.com/foundryvtt/dnd5e/wiki");
-				readmeParts.push("D&D5e Specific Module Flags: https://github.com/foundryvtt/dnd5e/wiki/Module-Registration");
-				readmeParts.push("");
-			}
-
-			if (data.system.includes("pf2e")) {
-				readmeParts.push("PF2e Wiki: https://github.com/foundryvtt/pf2e/wiki");
-				readmeParts.push("");
-			}
-
-			if (data.system.includes("sf2e")) {
-				readmeParts.push("SF2e Wiki: https://github.com/schultzcole/sf2e/wiki");
-				readmeParts.push("");
-			}
-
-			const readme = readmeParts.join("\n");
-
-			await writeFile(join(modulePath, "README.md"), readme);
-
-			return "README.md created";
+			await scaffoldModule(data, {
+				templatesDir: join(__dirname, "../templates"),
+				modulePath,
+				deleteFolder,
+				onProgress: m,
+			});
+			return "Module scaffolded";
 		},
 	},
 ]);

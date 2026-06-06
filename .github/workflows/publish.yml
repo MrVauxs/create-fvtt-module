@@ -34,6 +34,12 @@ jobs:
         name: Clean Install
         run: npm clean-install
 
+      - name: Type Check
+        run: npm run type-check
+
+      - name: Test
+        run: npm test
+
       - name: Build Package
         run: npm run build
 

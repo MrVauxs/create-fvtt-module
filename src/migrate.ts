@@ -5,6 +5,7 @@ import AdmZip from "adm-zip";
 import { extractPack } from "@foundryvtt/foundryvtt-cli";
 import { yellow, cyan } from "kolorist";
 import { SpinnerResult } from "@clack/prompts";
+import { safeJsonParse, isSafePackName } from "./utils.js";
 
 interface PackEntry {
 	label: string;
@@ -26,7 +27,7 @@ interface ModuleJson {
 	[key: string]: unknown;
 }
 
-function isUrl(input: string): boolean {
+export function isUrl(input: string): boolean {
 	return input.startsWith("http://") || input.startsWith("https://");
 }
 
@@ -38,7 +39,7 @@ async function readModuleJson(source: string, p: SpinnerResult): Promise<ModuleJ
 			throw new Error(`Failed to fetch module.json: ${response.status} ${response.statusText}`);
 		}
 		const text = await response.text();
-		const parsed = JSON.parse(text) as ModuleJson;
+		const parsed = safeJsonParse<ModuleJson>(text, source);
 		p.message(`module.json fetched successfully`);
 		return parsed;
 	}
@@ -55,7 +56,7 @@ async function readModuleJson(source: string, p: SpinnerResult): Promise<ModuleJ
 	}
 
 	const content = await readFile(jsonPath, "utf8");
-	return JSON.parse(content) as ModuleJson;
+	return safeJsonParse<ModuleJson>(content, jsonPath);
 }
 
 async function downloadZipBuffer(url: string): Promise<Buffer> {
@@ -171,6 +172,10 @@ export async function migrateFrom(source: string, modulePath: string, p: Spinner
 		const newPackNames: string[] = [];
 
 		for (const pack of sourceModuleJson.packs) {
+			if (!isSafePackName(pack.name)) {
+				p.message(`Skipping pack with unsafe name: ${pack.name}`);
+				continue;
+			}
 			const sourcePackPath = join(moduleRoot, pack.path);
 			const dbFileName = `${pack.name}.db`;
 			const sourceDbFile = join(sourcePackPath, dbFileName);
@@ -233,7 +238,7 @@ export async function migrateFrom(source: string, modulePath: string, p: Spinner
 			const targetModuleJsonPath = join(modulePath, "module.json");
 			if (existsSync(targetModuleJsonPath)) {
 				const content = await readFile(targetModuleJsonPath, "utf8");
-				const targetModuleJson = JSON.parse(content) as ModuleJson;
+				const targetModuleJson = safeJsonParse<ModuleJson>(content, targetModuleJsonPath);
 
 				targetModuleJson.packs = newPacks;
 				if (sourceModuleJson.packFolders) {

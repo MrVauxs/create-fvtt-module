@@ -60,47 +60,53 @@ if (data.features.includes("changelog")) {
 }
 
 if (data.features.includes("ftp")) {
-  mainYml += `
-            - name: Get FTP Path
-              id: ftp
-              run: echo "ftp=\${{fromJson(steps.set_var.outputs.PACKAGE_JSON).flags.ftpPath}}" >> $GITHUB_OUTPUT
+  mainYml = mainYml.replace(
+    "      # FTP_PLACEHOLDER",
+    `      - name: Get FTP Path
+        id: ftp
+        run: echo "ftp=\${{fromJson(steps.set_var.outputs.PACKAGE_JSON).flags.ftpPath}}" >> $GITHUB_OUTPUT
 
-            - name: Put Files into FTP Folder
-              env:
-                FTP_PASSWORD: \${{ secrets.FTP_PASSWORD }}
-              if: \${{ env.FTP_PASSWORD != '' }}
-              run: |
-                ls
-                mkdir _ftp
-                cp module.json _ftp/
-                cp module.zip _ftp/
-                mkdir _ftp/\${{steps.module_id.outputs.module_id}}
-                cp module.json _ftp/\${{steps.module_id.outputs.module_id}}/
+      - name: Put Files into FTP Folder
+        env:
+          FTP_PASSWORD: \${{ secrets.FTP_PASSWORD }}
+        if: \${{ env.FTP_PASSWORD != '' }}
+        run: |
+          ls
+          mkdir _ftp
+          cp module.json _ftp/
+          cp module.zip _ftp/
+          mkdir _ftp/\${{steps.module_id.outputs.module_id}}
+          cp module.json _ftp/\${{steps.module_id.outputs.module_id}}/
 
-            - name: Upload FTP
-              uses: sebastianpopp/ftp-action@releases/v2
-              env:
-                FTP_PASSWORD: \${{ secrets.FTP_PASSWORD }}
-              if: \${{ env.FTP_PASSWORD != '' }}
-              with:
-                host: \${{ secrets.FTP_SERVER }}
-                user: \${{ secrets.FTP_USERNAME }}
-                password: \${{ env.FTP_PASSWORD }}
-                localDir: _ftp
-                remoteDir: \${{steps.ftp.outputs.ftp}}
-`;
+      - name: Upload FTP
+        uses: sebastianpopp/ftp-action@releases/v2
+        env:
+          FTP_PASSWORD: \${{ secrets.FTP_PASSWORD }}
+        if: \${{ env.FTP_PASSWORD != '' }}
+        with:
+          host: \${{ secrets.FTP_SERVER }}
+          user: \${{ secrets.FTP_USERNAME }}
+          password: \${{ env.FTP_PASSWORD }}
+          localDir: _ftp
+          remoteDir: \${{steps.ftp.outputs.ftp}}`
+  );
+} else {
+  mainYml = mainYml.replace("\n      # FTP_PLACEHOLDER", "");
 }
 
 if (data.features.includes("discord")) {
-  mainYml += `
-            - name: Send Discord Ping
-              uses: Ilshidur/action-discord@0.3.2
-              env:
-                DISCORD_WEBHOOK: \${{ secrets.DISCORD_WEBHOOK }}
-              if: \${{ env.DISCORD_WEBHOOK != '' && !github.event.release.prerelease }}
-              with:
-                args: "\${{steps.title.outputs.title}} has been updated to version \`\${{github.event.release.tag_name}}\`!"
-`;
+  mainYml = mainYml.replace(
+    "      # DISCORD_PLACEHOLDER",
+    `      - name: Send Discord Ping
+        uses: Ilshidur/action-discord@0.3.2
+        env:
+          DISCORD_WEBHOOK: \${{ secrets.DISCORD_WEBHOOK }}
+        if: \${{ env.DISCORD_WEBHOOK != '' && !github.event.release.prerelease }}
+        with:
+          args: "\${{steps.title.outputs.title}} has been updated to version \`\${{github.event.release.tag_name}}\`!"`
+  );
+} else {
+  mainYml = mainYml.replace("\n      # DISCORD_PLACEHOLDER", "");
 }
 
 // Create workflow files

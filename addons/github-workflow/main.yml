@@ -60,3 +60,5 @@ jobs:
           artifacts: "./module.json, ./module.zip"
           omitDraftDuringUpdate: true
           omitPrereleaseDuringUpdate: true
+      # FTP_PLACEHOLDER
+      # DISCORD_PLACEHOLDER

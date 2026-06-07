@@ -7,8 +7,8 @@ import { join, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { spawn, execSync } from "child_process";
 import { parseArgs } from "util";
-import { isNewerVersion, slugify, isValidModuleId, safeJsonParse, detectPackageManager } from "./utils.js";
-import { scaffoldModule, type ScaffoldConfig, type PackEntry } from "./scaffold.js";
+import { isNewerVersion, slugify, isValidModuleId, safeJsonParse, detectPackageManager, PackDefinition } from "./utils.js";
+import { scaffoldModule, type ScaffoldConfig } from "./scaffold.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -207,15 +207,15 @@ const data = await p.group(
 		system: () =>
 			p.multiselect({
 				message: "What System?",
-				initialValues: ["dnd5e"],
+				initialValues: [],
 				required: false,
 				options: systems.map((system) => ({
 					label: system.id,
 					value: system.id,
 				})),
 			}),
-		packs: () =>
-			p.multiselect({
+		packs: (o) =>
+			(o?.results?.system?.length) ? p.multiselect({
 				message: "What Packs?",
 				required: false,
 				initialValues: [],
@@ -223,9 +223,9 @@ const data = await p.group(
 					label: pack.label,
 					value: pack,
 				})),
-			}),
+			}) : Promise.resolve([]),
 		containPacks: (opts) => {
-			const packResults = opts.results.packs as PackEntry[] | undefined;
+			const packResults = opts.results.packs as PackDefinition[] | undefined;
 			return (packResults?.length ?? 0) > 0
 				? p.confirm({
 					message: "Put Packs in a Folder?",

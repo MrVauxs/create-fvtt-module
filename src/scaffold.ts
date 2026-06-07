@@ -2,16 +2,7 @@ import { mkdir, cp, readFile, writeFile } from "fs/promises";
 import { existsSync, rmSync } from "fs";
 import { join, basename } from "path";
 import { systems } from "./options.js";
-import { buildSystemRelationships, buildPacks, safeJsonParse } from "./utils.js";
-
-export interface PackEntry {
-	label: string;
-	name: string;
-	path: string;
-	system: string;
-	type: string;
-	ownership: Record<string, string>;
-}
+import { buildSystemRelationships, buildPacks, safeJsonParse, PackDefinition } from "./utils.js";
 
 export interface ScaffoldConfig {
 	template: string;
@@ -20,7 +11,7 @@ export interface ScaffoldConfig {
 	description: string;
 	version: string;
 	system: string[];
-	packs: PackEntry[];
+	packs: PackDefinition[];
 	containPacks: boolean;
 	containPacksFolder?: string;
 }

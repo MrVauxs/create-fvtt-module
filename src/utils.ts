@@ -8,14 +8,17 @@ interface SystemDefinition {
 	};
 }
 
-interface PackDefinition {
+export interface PackDefinition {
 	label: string;
 	name: string;
 	path: string;
-	system: string;
-	type: string;
-	ownership: Record<string, string>;
-}
+	system?: string;
+	type: "Adventure" | "Actor" | "Item" | "JournalEntry" | "Macro" | "Playlist" | "RollTable" | "Scene" | "ActiveEffect" | "Cards";
+	ownership: {
+		PLAYER: string;
+		ASSISTANT: string;
+	};
+};
 
 /**
  * Compares two dot-separated version strings numerically.

@@ -282,38 +282,21 @@ function hasPackageJSON(): boolean {
 	return existsSync(join(modulePath, "package.json"));
 }
 
-await p.tasks([
-	{
-		title: "[Task] Scaffolding module",
-		task: async (m) => {
-			await scaffoldModule(data, {
-				templatesDir: join(__dirname, "../templates"),
-				modulePath,
-				deleteFolder,
-				onProgress: m,
-			});
-			return "Module scaffolded";
-		},
-	},
-	{
-		enabled: data.initGit,
-		title: "[Task] Initializing git repository",
-		task: async () => {
-			execSync("git init", { cwd: modulePath, stdio: "ignore" });
-			execSync("git add -A", { cwd: modulePath, stdio: "ignore" });
-			execSync('git commit -m "create-fvtt-module init"', { cwd: modulePath, stdio: "ignore" });
-			return "Git repository initialized";
-		},
-	},
-	{
-		enabled: data.installDeps,
-		title: `[Task] Installing dependencies`,
-		task: async () => {
-			execSync(`${pm} install`, { cwd: modulePath, stdio: "ignore" });
-			return "Dependencies installed";
-		},
-	},
-]);
+
+const scaffoldSpin = p.spinner();
+scaffoldSpin.start(`Scaffolding module...`);
+try {
+	await scaffoldModule(data, {
+		templatesDir: join(__dirname, "../templates"),
+		modulePath,
+		deleteFolder,
+		onProgress: scaffoldSpin.message,
+	});
+	scaffoldSpin.stop("Scaffolding completed successfully");
+} catch (err) {
+	scaffoldSpin.stop(`Scaffolding failed: ${err instanceof Error ? err.message : String(err)}`);
+	p.log.error(err instanceof Error ? err.message : String(err));
+}
 
 if (migrateFromFlag) {
 	const spin = p.spinner();
@@ -395,6 +378,27 @@ if (existsSync(onCreatePath)) {
 		p.log.success("onCreate script completed");
 	}
 }
+
+await p.tasks([
+	{
+		enabled: data.initGit,
+		title: "[Task] Initializing git repository",
+		task: async () => {
+			execSync("git init", { cwd: modulePath, stdio: "ignore" });
+			execSync("git add -A", { cwd: modulePath, stdio: "ignore" });
+			execSync('git commit -m "create-fvtt-module init"', { cwd: modulePath, stdio: "ignore" });
+			return "Git repository initialized";
+		},
+	},
+	{
+		enabled: data.installDeps,
+		title: `[Task] Installing dependencies`,
+		task: async () => {
+			execSync(`${pm} install`, { cwd: modulePath, stdio: "ignore" });
+			return "Dependencies installed";
+		},
+	},
+]);
 
 const nextStep = hasPackageJSON() && !data.installDeps ? `&& ${pm} install` : "and get to making stuff!";
 p.outro(`cd ${cyan(data.id)} ${nextStep}`);

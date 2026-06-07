@@ -208,6 +208,7 @@ const data = await p.group(
 			p.multiselect({
 				message: "What System?",
 				initialValues: ["dnd5e"],
+				required: false,
 				options: systems.map((system) => ({
 					label: system.id,
 					value: system.id,

@@ -52,18 +52,17 @@
 		"dev": "bun src/bin.ts \"My New Module\" --auto-id --override --template vite"
 	},
 	"devDependencies": {
-		"@clack/prompts": "^1.0.0-alpha.9",
 		"@eslint/js": "^9.0.0",
-		"@foundryvtt/foundryvtt-cli": "^1.0.0",
 		"@types/adm-zip": "^0.5.7",
 		"@types/node": "^20.19.39",
 		"eslint": "^9.0.0",
-		"kolorist": "^1.8.0",
-		"typescript": "^5",
 		"typescript-eslint": "^8.0.0",
 		"vitest": "^2.0.0"
 	},
 	"peerDependencies": {
+		"@clack/prompts": "^1.0.0-alpha.9",
+		"kolorist": "^1.8.0",
+		"@foundryvtt/foundryvtt-cli": "^1.0.0",
 		"adm-zip": "^0.5.16",
 		"typescript": "^5"
 	},

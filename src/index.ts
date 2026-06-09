@@ -6,5 +6,4 @@ export {
 	buildReadme,
 	type ScaffoldConfig,
 	type ScaffoldOptions,
-	type PackEntry,
 } from "./scaffold.js";

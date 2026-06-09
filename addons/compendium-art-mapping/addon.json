@@ -1,0 +1,5 @@
+{
+	"name": "Compendium Art Mapping",
+	"description": "Scaffolds image-mapping.json and wires compendiumArtMappings + tokenRingSubjectMappings flags.",
+	"default": false
+}

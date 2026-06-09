@@ -1,0 +1,5 @@
+{
+	"name": "Gallery Datasheet",
+	"description": "Scaffolds assets/datasheet/datasheet.json and wires galleryDatasheets flag.",
+	"default": false
+}

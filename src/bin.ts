@@ -97,6 +97,8 @@ interface Results extends ScaffoldConfig {
 	installDeps: boolean;
 	initGit: boolean;
 	quickstart: boolean;
+	socket: boolean;
+	compatMax: string;
 }
 
 p.intro(`${lightGreen(pkg.name)} v${pkg.version}`);
@@ -204,6 +206,17 @@ const data = await p.group(
 				message: "Foundry Version?",
 				initialValue: "13",
 				options: foundryVersions,
+			}),
+		compatMax: () =>
+			p.text({
+				message: "Maximum compatible Foundry version? (leave blank for none)",
+				defaultValue: "",
+				placeholder: "e.g. 14",
+			}),
+		socket: () =>
+			p.confirm({
+				message: "Enable module socket? (game.socket, for GM <=> player messaging)",
+				initialValue: false,
 			}),
 		system: () =>
 			p.multiselect({

@@ -19,6 +19,8 @@
 	},
 	"esmodules": [],
 	"styles": [],
+	"languages": [],
+	"socket": false,
 	"relationships": {},
 	"packs": [],
 	"packFolders": [],
@@ -26,7 +28,7 @@
 		"canUpload": true,
 		"hotReload": {
 			"extensions": ["css", "json"],
-			"paths": ["dist"]
+			"paths": ["dist", "lang"]
 		}
 	},
 	"url": "https://github.com/AUTHOR/REPO",

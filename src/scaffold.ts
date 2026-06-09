@@ -10,6 +10,8 @@ export interface ScaffoldConfig {
 	id: string;
 	description: string;
 	version: string;
+	compatMax?: string;
+	socket?: boolean;
 	system: string[];
 	packs: PackDefinition[];
 	containPacks: boolean;
@@ -44,7 +46,23 @@ export function buildModuleJson(
 	mod.compatibility = {
 		minimum: config.version,
 		verified: config.version,
+		...(config.compatMax ? { maximum: config.compatMax } : {}),
 	};
+
+	if (config.socket) {
+		mod.socket = true;
+	}
+
+	if (config.template === "vite") {
+		mod.languages = [
+			{
+				lang: "en",
+				name: "English",
+				path: "lang/en.json",
+			},
+		];
+	}
+
 	mod.relationships = {
 		systems: buildSystemRelationships(config.system, systems),
 	};
@@ -79,20 +97,19 @@ export function buildModuleJson(
 		(mod.flags as Record<string, unknown>) ??= {};
 		(mod.flags as Record<string, Record<string, unknown>>)[config.id] = {
 			"pf2e-homebrew": {
-				classTraits: {},
-				creatureTraits: {},
-				damageTypes: {},
-				featTraits: {},
 				languages: {},
-				magicSchools: {},
-				skills: {},
-				spellTraits: {},
+				armorGroups: {},
+				baseArmors: {},
+				classTraits: {},
 				weaponCategories: {},
 				weaponGroups: {},
 				baseWeapons: {},
+				creatureTraits: {},
+				featTraits: {},
+				spellTraits: {},
 				weaponTraits: {},
-				equipmentTraits: {},
 				shieldTraits: {},
+				equipmentTraits: {},
 			},
 		};
 	}
@@ -119,9 +136,11 @@ export function buildReadme(config: ScaffoldConfig, hasPackageJSON: boolean): st
 		parts.push("| Script | Description |");
 		parts.push("|--------|-------------|");
 		parts.push("| `dev` | Start the development server with HMR |");
-		parts.push("| `build` | Build the module for production |");
+		parts.push("| `build` | Build the module for production (includes compendiums) |");
+		parts.push("| `build:no-packs` | Build without recompiling compendium packs |");
+		parts.push("| `watch` | Watch mode — rebuilds on file change, skips compendiums |");
 		parts.push("| `symlink` | Symlink the module to your Foundry data directory |");
-		parts.push("| `extract` | Extract Foundry compendium packs |");
+		parts.push("| `extract` | Extract Foundry compendium packs to JSON |");
 	}
 
 	parts.push("");

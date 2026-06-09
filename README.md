@@ -18,8 +18,8 @@ npx create-fvtt-module
 Updating the package:
 
 ```bash
-bun i create-fvtt-module@latest -g
-npm install -g create-fvtt-module@latest
+bun i -g create-fvtt-module@latest
+npm i -g create-fvtt-module@latest
 ```
 
 ### Development Installation

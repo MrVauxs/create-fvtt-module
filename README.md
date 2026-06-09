@@ -1,5 +1,7 @@
 # create-fvtt-module
 
+![NPM Version](https://img.shields.io/npm/v/create-fvtt-module)![NPM Downloads](https://img.shields.io/npm/dt/create-fvtt-module)
+
 A CLI scaffolding tool for creating Foundry VTT modules.
 
 ## Installation

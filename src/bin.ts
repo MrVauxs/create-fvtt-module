@@ -305,7 +305,6 @@ function hasPackageJSON(): boolean {
 	return existsSync(join(modulePath, "package.json"));
 }
 
-
 const scaffoldSpin = p.spinner();
 scaffoldSpin.start(`Scaffolding module...`);
 try {
@@ -406,9 +405,12 @@ await p.tasks([
 	{
 		enabled: data.initGit,
 		title: "[Task] Initializing git repository",
-		task: async () => {
+		task: async (m) => {
+			m("Running git init...");
 			execSync("git init", { cwd: modulePath, stdio: "ignore" });
+			m("Adding files to git...");
 			execSync("git add -A", { cwd: modulePath, stdio: "ignore" });
+			m("Committing files...");
 			execSync('git commit -m "create-fvtt-module init"', { cwd: modulePath, stdio: "ignore" });
 			return "Git repository initialized";
 		},
@@ -416,7 +418,8 @@ await p.tasks([
 	{
 		enabled: data.installDeps,
 		title: `[Task] Installing dependencies`,
-		task: async () => {
+		task: async (m) => {
+			m("Installing dependencies...");
 			execSync(`${pm} install`, { cwd: modulePath, stdio: "ignore" });
 			return "Dependencies installed";
 		},

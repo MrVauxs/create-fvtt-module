@@ -5,9 +5,14 @@
 	"license": "MIT",
 	"scripts": {
 		"build": "vite build",
+		"build:no-packs": "cross-env NO_PACKS=true vite build",
 		"dev": "vite",
+		"watch": "cross-env NO_PACKS=true vite build --watch",
 		"extract": "node scripts/extractPacks.mjs",
 		"symlink": "node scripts/symlink.mjs"
+	},
+	"dependencies": {
+		"cross-env": "^7.0.3"
 	},
 	"devDependencies": {
 		"@7h3laughingman/foundry-types": "^13.351.2",

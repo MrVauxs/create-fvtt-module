@@ -8,6 +8,7 @@ import postcssPresetEnv from "postcss-preset-env";
 import 'dotenv/config'
 
 const target = "es2022"; // Build target for the final bundle.
+const noPacks = process.env.NO_PACKS === "true"; // Skip compendium compilation (watch/no-packs builds).
 const foundryPort = Number(process.env.FOUNDRY_PORT || 30000); // Which port your FoundryVTT instance is hosted at.
 const devPort = Number(process.env.DEV_PORT || 30001); // Which port you want to use for development.
 const libEntry = "index.ts"; // The main entry file to begin crawling from (root being `src/`).
@@ -87,7 +88,7 @@ export default defineConfig(({ command }) => {
 		},
 
 		plugins: [
-			vttSync(moduleJSON, { ignoreAdventureHMR: true }), // Build the database from JSON files on build
+			...(noPacks ? [] : [vttSync(moduleJSON)]), // Build the database from JSON files on build
 			{
 				name: 'create-dist-files', // Create dummy files for Foundry's tests to pass
 				apply: 'serve',

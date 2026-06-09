@@ -14,6 +14,7 @@ export interface ScaffoldConfig {
 	packs: PackDefinition[];
 	containPacks: boolean;
 	containPacksFolder?: string;
+	quickstart?: boolean;
 }
 
 export interface ScaffoldOptions {
@@ -58,6 +59,10 @@ export function buildModuleJson(
 				packs: (mod.packs as Array<{ name: string }>).map((x) => x.name),
 			},
 		];
+	}
+
+	if (config.quickstart) {
+		mod.quickstart = {};
 	}
 
 	if (config.system.includes("dnd5e")) {

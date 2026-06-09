@@ -96,6 +96,7 @@ interface Results extends ScaffoldConfig {
 	enabledAddons: string[];
 	installDeps: boolean;
 	initGit: boolean;
+	quickstart: boolean;
 }
 
 p.intro(`${lightGreen(pkg.name)} v${pkg.version}`);
@@ -243,6 +244,15 @@ const data = await p.group(
 					defaultValue: title,
 				})
 				: undefined;
+		},
+		quickstart: (opts) => {
+			const packResults = opts.results.packs as PackDefinition[] | undefined;
+			const hasAdventure = packResults?.some((p) => p.type === "Adventure") ?? false;
+			if (!hasAdventure) return Promise.resolve(false);
+			return p.confirm({
+				message: "Add quickstart? (https://foundryvtt.com/article/adventure/)",
+				initialValue: true,
+			});
 		},
 		enabledAddons: () => {
 			if (addons.length > 0) {

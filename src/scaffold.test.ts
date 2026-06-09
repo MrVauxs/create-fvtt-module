@@ -154,6 +154,26 @@ describe("scaffoldModule (end-to-end against real templates)", () => {
 		expect(mod.flags["my-test-module"]["pf2e-homebrew"]).toBeDefined();
 	});
 
+	it("adds quickstart field when quickstart is true", async () => {
+		const config = makeConfig({ quickstart: true });
+		const modulePath = join(workDir, config.id);
+
+		await scaffoldModule(config, { templatesDir, modulePath });
+
+		const mod = await readModuleJson(modulePath);
+		expect(mod.quickstart).toEqual({});
+	});
+
+	it("does not add quickstart field when quickstart is false", async () => {
+		const config = makeConfig({ quickstart: false });
+		const modulePath = join(workDir, config.id);
+
+		await scaffoldModule(config, { templatesDir, modulePath });
+
+		const mod = await readModuleJson(modulePath);
+		expect(mod.quickstart).toBeUndefined();
+	});
+
 	it("generates a README with title, vite scripts, and system links", async () => {
 		const config = makeConfig({ system: ["dnd5e"] });
 		const modulePath = join(workDir, config.id);

@@ -10,7 +10,6 @@ export interface ScaffoldConfig {
 	id: string;
 	description: string;
 	version: string;
-	compatMax?: string;
 	socket?: boolean;
 	system: string[];
 	packs: PackDefinition[];
@@ -46,7 +45,7 @@ export function buildModuleJson(
 	mod.compatibility = {
 		minimum: config.version,
 		verified: config.version,
-		...(config.compatMax ? { maximum: config.compatMax } : {}),
+		maximum: "",
 	};
 
 	if (config.socket) {

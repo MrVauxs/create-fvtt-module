@@ -33,6 +33,9 @@ export function isUrl(input: string): boolean {
 
 async function readModuleJson(source: string, p: SpinnerResult): Promise<ModuleJson> {
 	if (isUrl(source)) {
+		if (source.endsWith(".zip")) {
+			source = source.replace(".zip", ".json");
+		}
 		p.message(`Fetching module.json from ${cyan(source)}...`);
 		const response = await fetch(source);
 		if (!response.ok) {
@@ -160,7 +163,12 @@ export async function migrateFrom(source: string, modulePath: string, p: Spinner
 			throw new Error("No download URL found in module.json. The source module does not have a download property.");
 		}
 
-		p.message(`Downloading module from ${cyan(sourceModuleJson.download)}`);
+		// todo: make this just a function like "safeDisplayString" or something
+		const maxWidth = Math.max(24, (process.stdout.columns || 80) - 24);
+		const downloadUrl = sourceModuleJson.download.length > maxWidth
+			? sourceModuleJson.download.slice(0, maxWidth - 3) + "..."
+			: sourceModuleJson.download;
+		p.message(`Downloading module from ${cyan(downloadUrl)}`);
 
 		tempDir = join(modulePath, "temp", `${sourceModuleJson.id || `module-${Date.now()}`}`);
 		await mkdir(tempDir, { recursive: true });

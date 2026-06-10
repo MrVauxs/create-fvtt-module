@@ -131,26 +131,6 @@ const addons: (Addon & { id: string })[] = await Promise.all(
 
 const data = await p.group(
 	{
-		template: async () => {
-			if (templateFlag && templates.includes(templateFlag)) {
-				return templateFlag;
-			}
-			if (templateFlag) {
-				p.log.warn(`Unknown template "${templateFlag}". Available: ${templates.join(", ")}`);
-			}
-			if (templates.length === 1) {
-				return templates[0]!;
-			}
-			const template = await p.select({
-				message: "Select a template",
-				options: templates.map((template) => ({
-					label: template,
-					value: template,
-				})),
-			});
-			if (p.isCancel(template)) process.exit(1);
-			return template;
-		},
 		title: () => {
 			if (cliTitle) return Promise.resolve(cliTitle);
 			return p.text({
@@ -197,6 +177,26 @@ const data = await p.group(
 					deleteFolder = true;
 				}
 			}
+		},
+		template: async () => {
+			if (templateFlag && templates.includes(templateFlag)) {
+				return templateFlag;
+			}
+			if (templateFlag) {
+				p.log.warn(`Unknown template "${templateFlag}". Available: ${templates.join(", ")}`);
+			}
+			if (templates.length === 1) {
+				return templates[0]!;
+			}
+			const template = await p.select({
+				message: "Select a template",
+				options: templates.map((template) => ({
+					label: template,
+					value: template,
+				})),
+			});
+			if (p.isCancel(template)) process.exit(1);
+			return template;
 		},
 		description: () =>
 			p.text({ message: "Module Description?", defaultValue: "" }),

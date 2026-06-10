@@ -141,26 +141,36 @@ async function copyAssetsToMigration(moduleRoot: string): Promise<number> {
 export async function migrateFrom(source: string, modulePath: string, p: SpinnerResult): Promise<void> {
 	const sourceModuleJson = await readModuleJson(source, p);
 
-	if (!sourceModuleJson.download) {
-		throw new Error("No download URL found in module.json. The source module does not have a download property.");
-	}
-
 	if (!sourceModuleJson.packs || sourceModuleJson.packs.length === 0) {
 		p.message("No packs found in the source module.json.");
 		return;
 	}
 
-	p.message(`Downloading module from ${cyan(sourceModuleJson.download)}`);
+	const isLocal = !isUrl(source);
 
-	const tempDir = join(modulePath, "temp", `${sourceModuleJson.id || `module-${Date.now()}`}`);
+	let tempDir: string | null = null;
+	let moduleRoot: string;
 
-	try {
+	if (isLocal) {
+		const sourceStat = await stat(source);
+		moduleRoot = sourceStat.isDirectory() ? source : dirname(source);
+		p.message(`Using local module at ${cyan(moduleRoot)}`);
+	} else {
+		if (!sourceModuleJson.download) {
+			throw new Error("No download URL found in module.json. The source module does not have a download property.");
+		}
+
+		p.message(`Downloading module from ${cyan(sourceModuleJson.download)}`);
+
+		tempDir = join(modulePath, "temp", `${sourceModuleJson.id || `module-${Date.now()}`}`);
 		await mkdir(tempDir, { recursive: true });
 		const zipBuffer = await downloadZipBuffer(sourceModuleJson.download);
 		const zip = new AdmZip(zipBuffer);
 		zip.extractAllTo(tempDir, true);
+		moduleRoot = findModuleRoot(tempDir);
+	}
 
-		const moduleRoot = findModuleRoot(tempDir);
+	try {
 		p.message(`Found ${sourceModuleJson.packs.length} pack(s) in module.json: ${sourceModuleJson.packs.map((p) => p.name).join(", ")}`);
 
 		const targetPacksDir = join(modulePath, "packs");
@@ -254,7 +264,7 @@ export async function migrateFrom(source: string, modulePath: string, p: Spinner
 		const assetCount = await copyAssetsToMigration(moduleRoot);
 		p.message(`Copied ${assetCount} asset(s) to src/migration/`);
 
-		p.message(`Migration complete! ${newPacks.length} pack(s) processed. Extracted module kept in ${cyan(tempDir)}.`);
+		p.message(`Migration complete! ${newPacks.length} pack(s) processed.${tempDir ? ` Extracted module kept in ${cyan(tempDir)}.` : ""}`);
 	} catch (error) {
 		p.message(`Migration failed: ${error instanceof Error ? error.message : String(error)}`);
 		throw error;

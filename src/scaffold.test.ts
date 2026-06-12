@@ -53,7 +53,7 @@ describe("scaffoldModule (end-to-end against real templates)", () => {
 		expect(mod.id).toBe("my-test-module");
 		expect(mod.title).toBe("My Test Module");
 		expect(mod.description).toBe("A test module");
-		expect(mod.compatibility).toEqual({ minimum: "13", verified: "13" });
+		expect(mod.compatibility).toEqual({ minimum: "13", verified: "13", maximum: "" });
 	});
 
 	it("does not copy node_modules/.git from the template", async () => {

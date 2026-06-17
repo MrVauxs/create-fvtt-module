@@ -14,9 +14,9 @@ export interface PackDefinition {
 	path: string;
 	system?: string;
 	type: "Adventure" | "Actor" | "Item" | "JournalEntry" | "Macro" | "Playlist" | "RollTable" | "Scene" | "ActiveEffect" | "Cards";
-	ownership: {
-		PLAYER: string;
-		ASSISTANT: string;
+	ownership?: {
+		PLAYER?: string;
+		ASSISTANT?: string;
 	};
 };
 

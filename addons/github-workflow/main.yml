@@ -21,11 +21,11 @@ jobs:
 
       - name: Get Module ID
         id: module_id
-        run: echo "module_id=\${{fromJson(steps.set_var.outputs.PACKAGE_JSON).id}}" >> $GITHUB_OUTPUT
+        run: echo "module_id=${{fromJson(steps.set_var.outputs.PACKAGE_JSON).id}}" >> $GITHUB_OUTPUT
 
       - name: Get Module Title
         id: title
-        run: echo "title=\${{fromJson(steps.set_var.outputs.PACKAGE_JSON).title}}" >> $GITHUB_OUTPUT
+        run: echo "title=${{fromJson(steps.set_var.outputs.PACKAGE_JSON).title}}" >> $GITHUB_OUTPUT
 
       - name: Substitute Manifest and Download Links For Versioned Ones
         id: sub_manifest_link_version
@@ -60,5 +60,7 @@ jobs:
           artifacts: "./module.json, ./module.zip"
           omitDraftDuringUpdate: true
           omitPrereleaseDuringUpdate: true
+
       # FTP_PLACEHOLDER
+
       # DISCORD_PLACEHOLDER

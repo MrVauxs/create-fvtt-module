@@ -78,17 +78,36 @@ if (data.features.includes("ftp")) {
           mkdir _ftp/\${{steps.module_id.outputs.module_id}}
           cp module.json _ftp/\${{steps.module_id.outputs.module_id}}/
 
-      - name: Upload FTP
-        uses: sebastianpopp/ftp-action@releases/v2
+      - name: Install lftp
         env:
           FTP_PASSWORD: \${{ secrets.FTP_PASSWORD }}
         if: \${{ env.FTP_PASSWORD != '' }}
-        with:
-          host: \${{ secrets.FTP_SERVER }}
-          user: \${{ secrets.FTP_USERNAME }}
-          password: \${{ env.FTP_PASSWORD }}
-          localDir: _ftp
-          remoteDir: \${{steps.ftp.outputs.ftp}}`
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lftp
+
+      - name: Upload FTP
+        timeout-minutes: 15
+        env:
+          FTP_HOST: \${{ secrets.FTP_SERVER }}
+          FTP_USER: \${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: \${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE_DIR: \${{ steps.ftp.outputs.ftp }}
+        if: \${{ env.FTP_PASSWORD != '' }}
+        run: |
+          lftp -u "$FTP_USER,$FTP_PASSWORD" "$FTP_HOST" <<EOF
+            set ftp:ssl-force true;
+            set ssl:verify-certificate false;
+            set net:timeout 30;
+            set xfer:timeout 60;
+            set net:max-retries 5;
+            set net:reconnect-interval-base 180;
+            set net:reconnect-interval-multiplier 1;
+            set net:reconnect-interval-max 300;
+            mirror --reverse --continue --dereference -x ^\.git/$ _ftp "$FTP_REMOTE_DIR";
+            quit
+          EOF
+`
   );
 } else {
   mainYml = mainYml.replace("\n      # FTP_PLACEHOLDER", "");

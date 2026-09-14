@@ -131,7 +131,7 @@ const systems = [
 ];
 
 const foundryVersions = [
-	{ label: "V13", value: "13" },
+	// { label: "V13", value: "13" },
 	{ label: "V14", value: "14" },
 ];
 

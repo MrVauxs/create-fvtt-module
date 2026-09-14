@@ -203,13 +203,8 @@ const data = await p.group(
 		version: () =>
 			p.select({
 				message: "Foundry Version?",
-				initialValue: "13",
+				initialValue: "14",
 				options: foundryVersions,
-			}),
-		socket: () =>
-			p.confirm({
-				message: "Enable module socket? (game.socket, for GM <=> player messaging)",
-				initialValue: false,
 			}),
 		system: () =>
 			p.multiselect({
@@ -260,6 +255,11 @@ const data = await p.group(
 				initialValue: true,
 			});
 		},
+		socket: () =>
+			p.confirm({
+				message: "Enable module socket? (game.socket, for GM <=> player messaging)",
+				initialValue: false,
+			}),
 		enabledAddons: () => {
 			if (addons.length > 0) {
 				return p.multiselect({

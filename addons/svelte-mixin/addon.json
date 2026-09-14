@@ -1,0 +1,5 @@
+{
+	"name": "Svelte Application Mixin",
+	"description": "Adds a Svelte 5 ApplicationV2 mixin and its render context types.",
+	"default": false
+}

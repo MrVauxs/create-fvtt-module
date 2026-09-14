@@ -23,7 +23,8 @@ if (!existsSync(srcDir)) {
 const libDir = join(srcDir, "lib");
 await mkdir(libDir, { recursive: true });
 
-const mixinContent = `import * as svelte from "svelte";
+const mixinContent = `import type * as fa from "@7h3laughingman/foundry-types/client/applications/_module.mjs";
+import * as svelte from "svelte";
 
 interface SvelteApplicationRenderContext extends fa.ApplicationRenderContext {
 	/**
@@ -48,13 +49,33 @@ interface SvelteAppProps<TContext extends SvelteApplicationRenderContext = Svelt
 	getState: () => TContext["state"];
 }
 
-// TODO: Figure out this fuckass exported anonymous class type error.
+// A named declaration lets TypeScript emit the mixin's protected API without
+// expanding the implementation class (and all inherited protected members).
+declare abstract class SvelteApplication extends fa.api.ApplicationV2 {
+	protected abstract root: svelte.Component<any>;
+	protected $state: object;
+
+	protected abstract override _prepareContext(
+		options: fa.ApplicationRenderOptions,
+	): Promise<SvelteApplicationRenderContext>;
+
+	protected override _renderHTML(
+		context: SvelteApplicationRenderContext,
+	): Promise<SvelteApplicationRenderContext>;
+
+	protected override _replaceHTML(
+		result: SvelteApplicationRenderContext,
+		content: HTMLElement,
+		options: fa.ApplicationRenderOptions,
+	): void;
+}
+
 function SvelteApplicationMixin<
 	TBase extends AbstractConstructorOf<fa.api.ApplicationV2> & {
 		DEFAULT_OPTIONS: DeepPartial<fa.ApplicationConfiguration>;
 	},
->(Base: TBase) {
-	abstract class SvelteApplication extends Base {
+>(Base: TBase): AbstractConstructorOf<SvelteApplication> & TBase {
+	abstract class SvelteApplicationImplementation extends Base {
 		static override DEFAULT_OPTIONS: DeepPartial<fa.ApplicationConfiguration> = {
 			classes: [],
 		};
@@ -114,13 +135,13 @@ function SvelteApplicationMixin<
 		}
 	}
 
-	return SvelteApplication;
+	// The declaration and implementation describe the same protected API, but
+	// TypeScript treats their separately declared protected members as nominal.
+	return SvelteApplicationImplementation as unknown as AbstractConstructorOf<SvelteApplication> & TBase;
 }
 
-type SvelteApplication = InstanceType<ReturnType<typeof SvelteApplicationMixin>>;
-
 export { SvelteApplicationMixin };
-export type { SvelteApplicationRenderContext, SvelteAppProps };
+export type { SvelteApplication, SvelteApplicationRenderContext, SvelteAppProps };
 `;
 
 const mixinPath = join(libDir, "svelte-mixin.svelte.ts");

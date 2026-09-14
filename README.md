@@ -4,6 +4,8 @@
 
 A CLI scaffolding tool for creating Foundry VTT modules.
 
+Requires Node.js 24 or newer, including for generated Vite projects.
+
 ## Installation
 
 ### Global Installation (for end users)
@@ -33,6 +35,8 @@ bun install
 bun run dev
 ```
 ### Development
+
+TypeScript is kept on 6.0.x because the latest `typescript-eslint` supports versions below 6.1.
 
 ```bash
 # Install dependencies

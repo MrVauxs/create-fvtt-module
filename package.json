@@ -1,6 +1,6 @@
 {
 	"name": "create-fvtt-module",
-	"version": "0.6.11",
+	"version": "0.7.0",
 	"description": "A CLI tool to scaffold Foundry VTT modules",
 	"keywords": [
 		"foundry-vtt",
@@ -56,17 +56,17 @@
 		"@types/adm-zip": "^0.5.8",
 		"@types/node": "^26.5.1",
 		"eslint": "^10.10.0",
+		"typescript": "~6.0.3",
 		"typescript-eslint": "^8.70.0",
 		"vitest": "^5.0.0"
 	},
-	"peerDependencies": {
-		"@clack/prompts": "^1.2.0",
+	"dependencies": {
+		"@clack/prompts": "^1.8.1",
 		"kolorist": "^1.8.0",
-		"@foundryvtt/foundryvtt-cli": "^1.1.0",
-		"adm-zip": "^0.5.17",
-		"typescript": "^7.0.2"
+		"@foundryvtt/foundryvtt-cli": "^3.0.4",
+		"adm-zip": "^0.6.1"
 	},
 	"engines": {
-		"node": ">=18.0.0"
+		"node": ">=24.0.0"
 	}
 }

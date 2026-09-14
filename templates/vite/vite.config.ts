@@ -26,7 +26,7 @@ const PACKAGE_ID = `modules/${moduleJSON.id}`;
 export default defineConfig(({ command }) => {
 	if (command === 'serve') console.log(`Running foundry port ${foundryPort} -> dev port ${devPort}`);
 	return {
-		root: "src/", // Source location / esbuild root.
+		root: "src/", // Source location.
 		base: `/${PACKAGE_ID}/dist`, // Base module path.
 		publicDir: false, // No public resources to copy.
 		cacheDir: "../.vite-cache", // Relative from root directory.
@@ -34,13 +34,13 @@ export default defineConfig(({ command }) => {
 		resolve: {
 			conditions: ["browser", "import", "default"], // Only use browser-compatible exports from node modules.
 			alias: {
-				$lib: path.resolve(__dirname, "./src/lib"),
-				moduleJSON: path.resolve(__dirname, "./module.json"),
+				$lib: path.resolve(import.meta.dirname, "./src/lib"),
+				moduleJSON: path.resolve(import.meta.dirname, "./module.json"),
 				// Modify also the tsconfig.json file to include the alias
 			},
 		},
 
-		esbuild: { target }, // https://esbuild.github.io/api/#transform
+		oxc: { target }, // https://vite.dev/config/shared-options#oxc
 
 		css: { postcss }, // https://vite.dev/config/shared-options#css-postcss
 
@@ -78,7 +78,7 @@ export default defineConfig(({ command }) => {
 				formats: ["es"],
 				fileName: moduleJSON.id,
 			},
-			rollupOptions: {
+			rolldownOptions: {
 				output: {
 					// Rewrite the default style.css to a more recognizable file name.
 					assetFileNames: assetInfo =>

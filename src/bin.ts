@@ -35,8 +35,6 @@ async function checkForUpdates() {
 	}
 }
 
-await checkForUpdates();
-
 import { packs, systems, foundryVersions } from "./options.js";
 import { migrateFrom } from "./migrate.js";
 
@@ -85,6 +83,9 @@ if (flags.version) {
 	console.log(pkg.version);
 	process.exit(0);
 }
+
+// Keep informational commands offline and avoid exiting with an active fetch connection.
+await checkForUpdates();
 
 const cliTitle: string | undefined = positionals[0] as string | undefined;
 const autoId = flags["auto-id"] as boolean;

@@ -121,7 +121,7 @@ export function safeJsonParse<T = unknown>(text: string, source: string): T {
 		return JSON.parse(text) as T;
 	} catch (err) {
 		const reason = err instanceof Error ? err.message : String(err);
-		throw new Error(`Failed to parse JSON from ${source}: ${reason}`);
+		throw new Error(`Failed to parse JSON from ${source}: ${reason}`, { cause: err });
 	}
 }
 

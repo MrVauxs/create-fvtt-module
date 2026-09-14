@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import * as p from "@clack/prompts";
-import { cyan, lightGreen } from "kolorist";
+import { cyan, lightGreen, bold, lightCyan } from "kolorist";
 import { readFile } from "fs/promises";
 import { existsSync, readdirSync, statSync } from "fs";
 import { join, resolve, dirname } from "path";
@@ -266,7 +266,7 @@ const data = await p.group(
 					message: "Enable addons?",
 					required: false,
 					options: addons.map((addon) => ({
-						label: `${addon.name} - ${addon.description}`,
+						label: `[${bold(addon.name)}]\n${lightCyan(addon.description)}`,
 						value: addon.id,
 					})),
 				});

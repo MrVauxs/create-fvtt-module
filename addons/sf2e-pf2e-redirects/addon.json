@@ -1,5 +1,5 @@
 {
 	"name": "SF2e <=> PF2e UUID Redirects",
-	"description": "Adds UUID redirects for modules that support both SF2e and PF2e. Skipped if module doesn't support both systems.",
+	"description": "Adds UUID redirects for modules that support both SF2e and PF2e.",
 	"default": true
 }

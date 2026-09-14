@@ -1,5 +1,5 @@
 {
 	"name": "Gallery Datasheet",
-	"description": "Scaffolds assets/datasheet/datasheet.json and wires galleryDatasheets flag.",
+	"description": "Scaffolds content for Pathfinder Tokens: Character Gallery compatibility.",
 	"default": false
 }

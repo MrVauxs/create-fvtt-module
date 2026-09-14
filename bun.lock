@@ -13,7 +13,7 @@
         "vitest": "^5.0.0",
       },
       "peerDependencies": {
-        "@clack/prompts": "^1.8.1",
+        "@clack/prompts": "^1.2.0",
         "@foundryvtt/foundryvtt-cli": "^1.1.0",
         "adm-zip": "^0.5.17",
         "kolorist": "^1.8.0",

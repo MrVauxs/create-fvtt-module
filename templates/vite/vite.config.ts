@@ -8,6 +8,7 @@ import postcssPresetEnv from "postcss-preset-env";
 import 'dotenv/config'
 
 const target = "es2022"; // Build target for the final bundle.
+const cssTarget = ["chrome123", "firefox120", "safari17.5"]; // Oldest browsers with light-dark(), so Lightning CSS keeps the CSS as written.
 const noPacks = process.env.NO_PACKS === "true"; // Skip compendium compilation (watch/no-packs builds).
 const foundryPort = Number(process.env.FOUNDRY_PORT || 30000); // Which port your FoundryVTT instance is hosted at.
 const devPort = Number(process.env.DEV_PORT || 30001); // Which port you want to use for development.
@@ -42,6 +43,9 @@ export default defineConfig(({ command }) => {
 
 		oxc: { target }, // https://vite.dev/config/shared-options#oxc
 
+		// Library mode leaves `process.env` for the consumer to replace, but Foundry has no `process`, so dependencies that check it would throw.
+		define: { "process.env.NODE_ENV": JSON.stringify(command === "serve" ? "development" : "production") },
+
 		css: { postcss }, // https://vite.dev/config/shared-options#css-postcss
 
 		server: {
@@ -69,10 +73,8 @@ export default defineConfig(({ command }) => {
 			emptyOutDir: true,
 			sourcemap: true, // Provide a publicly available sourcemap for debugging purposes.
 			target,
-			minify: "terser",
-			terserOptions: {
-				keep_classnames: true, // Don't mangle class names since Foundry relies on them
-			},
+			cssTarget,
+			minify: true,
 			lib: {
 				entry: "./" + libEntry,
 				formats: ["es"],
@@ -80,6 +82,12 @@ export default defineConfig(({ command }) => {
 			},
 			rolldownOptions: {
 				output: {
+					// Minify here, as library mode leaves the whitespace in. Don't mangle class names since Foundry relies on them.
+					minify: {
+						compress: { keepNames: { function: false, class: true } },
+						mangle: { keepNames: { function: false, class: true } },
+						codegen: { removeWhitespace: true },
+					},
 					// Rewrite the default style.css to a more recognizable file name.
 					assetFileNames: assetInfo =>
 						assetInfo.name === "style.css" ? `${moduleJSON.id}.css` : assetInfo.name as string,

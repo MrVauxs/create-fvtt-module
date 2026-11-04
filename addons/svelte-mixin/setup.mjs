@@ -148,17 +148,50 @@ const mixinPath = join(libDir, "svelte-mixin.svelte.ts");
 await writeFile(mixinPath, mixinContent);
 p.log.success(`Created ${cyan("src/lib/svelte-mixin.svelte.ts")}`);
 
-// The mixin imports Svelte while the module is being bundled. Add it only when
-// the generated module has a package manifest and no Svelte version is present.
+// The mixin's runes ($state) only work once the Svelte compiler processes the
+// .svelte.ts file, so Vite projects also need the Svelte plugin.
+const viteConfigPath = join(moduleDir, "vite.config.ts");
+const usesVite = existsSync(viteConfigPath);
+
+// The mixin imports Svelte while the module is being bundled. Add the packages
+// only when the generated module has a package manifest and doesn't list them yet.
 const packageJsonPath = join(moduleDir, "package.json");
 if (existsSync(packageJsonPath)) {
 	const packageJson = JSON.parse(await readFile(packageJsonPath, "utf8"));
-	const hasSvelteDependency = packageJson.dependencies?.svelte || packageJson.devDependencies?.svelte;
-	if (!hasSvelteDependency) {
-		packageJson.devDependencies ??= {};
-		packageJson.devDependencies.svelte = "^5.0.0";
+	packageJson.devDependencies ??= {};
+	const wanted = { svelte: "^5.46.4" };
+	if (usesVite) wanted["@sveltejs/vite-plugin-svelte"] = "^7.3.1";
+
+	const added = [];
+	for (const [name, version] of Object.entries(wanted)) {
+		if (packageJson.dependencies?.[name] || packageJson.devDependencies[name]) continue;
+		packageJson.devDependencies[name] = version;
+		added.push(name);
+	}
+
+	if (added.length > 0) {
 		await writeFile(packageJsonPath, JSON.stringify(packageJson, null, "\t") + "\n");
-		p.log.success(`Updated ${cyan("package.json")} with the Svelte dependency`);
+		p.log.success(`Updated ${cyan("package.json")} with ${added.map(name => cyan(name)).join(", ")}`);
+	}
+}
+
+if (usesVite) {
+	const viteConfig = await readFile(viteConfigPath, "utf8");
+	if (!viteConfig.includes("@sveltejs/vite-plugin-svelte")) {
+		// Match the file's line endings, as Windows checkouts of the template use CRLF.
+		const eol = viteConfig.includes("\r\n") ? "\r\n" : "\n";
+		const importAnchor = /^import \{ defineConfig \} from "vite";(?=\r?$)/m;
+		const pluginsAnchor = /^(\t*)plugins: \[(?=\r?$)/m;
+
+		if (importAnchor.test(viteConfig) && pluginsAnchor.test(viteConfig)) {
+			const patched = viteConfig
+				.replace(importAnchor, match => `import { svelte } from "@sveltejs/vite-plugin-svelte";${eol}${match}`)
+				.replace(pluginsAnchor, (match, indent) => `${match}${eol}${indent}\tsvelte(),`);
+			await writeFile(viteConfigPath, patched);
+			p.log.success(`Added the Svelte plugin to ${cyan("vite.config.ts")}`);
+		} else {
+			p.log.warn(`⚠️ Couldn't find where to add the Svelte plugin. Add ${cyan("svelte()")} from ${cyan("@sveltejs/vite-plugin-svelte")} to the plugins in ${cyan("vite.config.ts")} yourself.`);
+		}
 	}
 }
 

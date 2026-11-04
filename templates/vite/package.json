@@ -19,7 +19,7 @@
 		"@clack/prompts": "^1.8.1",
 		"@foundryvtt/foundryvtt-cli": "^3.0.4",
 		"dotenv": "^17.4.2",
-		"foundryvtt-sync": "^3.0.2",
+		"foundryvtt-sync": "^4.0.0",
 		"gsap": "^3.15.0",
 		"kolorist": "^1.8.0",
 		"postcss-preset-env": "^11.5.3",

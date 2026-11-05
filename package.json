@@ -12,7 +12,7 @@
 	"author": "mrvauxs",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/MrVauxs/create-fvtt-module"
+		"url": "git+https://github.com/MrVauxs/create-fvtt-module.git"
 	},
 	"homepage": "https://github.com/MrVauxs/create-fvtt-module#readme",
 	"bugs": {
@@ -31,7 +31,7 @@
 		}
 	},
 	"bin": {
-		"create-fvtt-module": "./dist/bin.js"
+		"create-fvtt-module": "dist/bin.js"
 	},
 	"files": [
 		"dist/",
